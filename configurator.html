@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta name="robots" content="noindex, nofollow">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Номерок — конфигуратор номера</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Layout: «спецификация номера» — план номера как витрина, конфигуратор как ведомость с табличкой-номерком */
+:root{
+  --paper:#f2f1ec;
+  --card:#fbfaf7;
+  --ink:#1c2422;
+  --muted:#5f6a66;
+  --line:#d6d4cb;
+  --brass:#9a6b1f;
+  --brass-soft:#efe3c9;
+  --sage:#2f5d50;
+  --sage-soft:#dfe9e4;
+  --ok:#2f6b3f;
+  --font-display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono:"IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#151a19; --card:#1c2321; --ink:#ecebe5; --muted:#a3ada9; --line:#2f3936;
+    --brass:#d9a54a; --brass-soft:#3a2f1b; --sage:#8cc2b0; --sage-soft:#1f3530; --ok:#7cc48f;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#151a19; --card:#1c2321; --ink:#ecebe5; --muted:#a3ada9; --line:#2f3936;
+  --brass:#d9a54a; --brass-soft:#3a2f1b; --sage:#8cc2b0; --sage-soft:#1f3530; --ok:#7cc48f;
+  color-scheme: dark;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto} *{transition:none!important;animation:none!important}}
+body{margin:0;background:var(--paper);color:var(--ink);font:400 16px/1.55 var(--font-body)}
+a{color:var(--sage)}
+:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+.wrap{max-width:1200px;margin:0 auto;padding:0 24px}
+@media (max-width:480px){.wrap{padding:0 16px}}
+h1,h2,h3{font-family:var(--font-display);text-wrap:balance;margin:0;letter-spacing:-0.01em}
+h1{font-size:clamp(34px,5vw,58px);line-height:1.02;font-weight:800}
+h2{font-size:clamp(26px,3vw,36px);line-height:1.1;font-weight:700}
+h3{font-size:19px;font-weight:700}
+.mono{font-family:var(--font-mono)}
+.muted{color:var(--muted)}
+.tnum{font-variant-numeric:tabular-nums}
+
+/* header */
+header.top{border-bottom:1px solid var(--line);background:var(--paper);position:sticky;top:0;z-index:10}
+header.top .wrap{display:flex;align-items:center;gap:24px;height:64px}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font-weight:800;font-size:20px;text-decoration:none;color:var(--ink)}
+.plate{display:inline-grid;place-items:center;min-width:46px;height:30px;padding:0 8px;border:1.5px solid var(--brass);border-radius:4px;color:var(--brass);font:500 13px/1 var(--font-mono);letter-spacing:.06em}
+nav.main{display:flex;gap:20px;margin-left:auto;flex-wrap:wrap}
+nav.main a{color:var(--ink);text-decoration:none;font-size:14px}
+nav.main a:hover{color:var(--brass)}
+.proto{font:500 11px/1 var(--font-mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);border:1px dashed var(--line);padding:6px 8px;border-radius:4px;white-space:nowrap}
+@media (max-width:820px){nav.main{display:none}}
+
+/* hero */
+.hero{padding:56px 0 40px;display:grid;grid-template-columns:1.05fr .95fr;gap:48px;align-items:center}
+@media (max-width:900px){.hero{grid-template-columns:1fr;gap:28px;padding-top:32px}}
+.hero p.lead{font-size:19px;max-width:34em;color:var(--muted);margin:20px 0 0}
+.facts{display:flex;gap:28px;margin-top:28px;flex-wrap:wrap}
+.fact b{display:block;font:700 30px/1 var(--font-display);color:var(--ink)}
+.fact span{font-size:13px;color:var(--muted)}
+.cta{display:flex;gap:12px;margin-top:28px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:8px;border-radius:6px;padding:12px 18px;font:600 15px/1 var(--font-body);border:1.5px solid var(--ink);background:var(--ink);color:var(--paper);cursor:pointer;text-decoration:none}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn:hover{border-color:var(--brass)}
+.btn.brass{background:var(--brass);border-color:var(--brass);color:#fff}
+
+/* plan */
+.plan{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px}
+.plan svg{width:100%;height:auto;display:block}
+.plan .zone{cursor:pointer;transition:fill .2s}
+.plan .zone rect{fill:var(--card);stroke:var(--ink);stroke-width:1.5}
+.plan .zone:hover rect, .plan .zone.on rect{fill:var(--brass-soft)}
+.plan text{font-family:var(--font-mono);font-size:11px;fill:var(--ink)}
+.plan .cap{display:flex;justify-content:space-between;gap:12px;margin-top:10px;font-size:13px;color:var(--muted)}
+
+/* sections */
+section.block{scroll-margin-top:64px;padding:56px 0;border-top:1px solid var(--line)}
+.sec-head{display:flex;justify-content:space-between;align-items:end;gap:24px;flex-wrap:wrap;margin-bottom:28px}
+.sec-head p{max-width:40em;margin:8px 0 0;color:var(--muted)}
+
+/* configurator */
+.cfg{display:grid;grid-template-columns:1fr 340px;gap:28px;align-items:start}
+@media (max-width:980px){.cfg{grid-template-columns:1fr}}
+.steps{display:grid;gap:20px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:20px}
+.panel h3{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.step-n{font:500 12px/1 var(--font-mono);color:var(--brass);border:1px solid var(--brass);border-radius:999px;padding:4px 8px}
+.levels{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media (max-width:640px){.levels{grid-template-columns:1fr}}
+.level{position:relative;border:1.5px solid var(--line);border-radius:8px;padding:14px;cursor:pointer;background:var(--paper)}
+.level input{position:absolute;opacity:0;pointer-events:none}
+.level:has(input:checked){border-color:var(--brass);background:var(--brass-soft)}
+.level:has(input:focus-visible){outline:2px solid var(--brass);outline-offset:2px}
+.level .nm{font:700 17px/1.2 var(--font-display)}
+.level .ds{font-size:13px;color:var(--muted);margin-top:6px}
+.level .ct{font:500 12px/1 var(--font-mono);margin-top:10px;color:var(--sage)}
+.row{display:flex;gap:16px;flex-wrap:wrap;align-items:end}
+.field{display:grid;gap:6px;min-width:160px}
+.field label{font-size:13px;color:var(--muted)}
+input[type=number], input[type=text], input[type=email], input[type=tel], select, textarea{font:inherit;color:var(--ink);background:var(--paper);border:1.5px solid var(--line);border-radius:6px;padding:10px 12px;width:100%}
+input:focus, select:focus, textarea:focus{border-color:var(--brass);outline:none}
+.zones-nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.chip{font:500 13px/1 var(--font-body);border:1.5px solid var(--line);background:var(--paper);color:var(--ink);border-radius:999px;padding:8px 12px;cursor:pointer}
+.chip[aria-pressed="true"]{border-color:var(--sage);background:var(--sage-soft);color:var(--sage)}
+.chip .c{font-family:var(--font-mono);font-size:11px;margin-left:6px;color:var(--muted)}
+.zone-group{margin-top:18px}
+.zone-group h4{font:700 15px/1.2 var(--font-display);margin:0 0 8px;display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);padding-bottom:6px}
+.item{display:grid;grid-template-columns:22px 1fr 92px;gap:12px;align-items:start;padding:10px 0;border-bottom:1px dashed var(--line)}
+.item:last-child{border-bottom:0}
+.item input[type=checkbox]{width:18px;height:18px;margin-top:3px;accent-color:var(--brass)}
+.item .t{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.item .n{font-weight:500}
+.item .sp{font-size:13px;color:var(--muted);margin-top:2px}
+.item select{margin-top:6px;font-size:13px;padding:6px 8px}
+.item .qty{display:grid;gap:4px;justify-items:end}
+.item .qty input{width:72px;text-align:right;padding:6px 8px}
+.item .qty small{font:500 11px/1 var(--font-mono);color:var(--muted)}
+.tag{display:inline-block;font:500 10px/1 var(--font-mono);text-transform:uppercase;letter-spacing:.06em;padding:3px 6px;border-radius:3px;margin-left:6px;vertical-align:2px}
+.tag.opt{background:var(--brass-soft);color:var(--brass)}
+.tag.alt{background:var(--sage-soft);color:var(--sage)}
+.item.off .n{color:var(--muted)}
+
+/* summary */
+.summary{position:sticky;top:84px;display:grid;gap:16px}
+.ticket{background:var(--ink);color:var(--paper);border-radius:10px;padding:20px}
+.ticket .lv{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.ticket .plate{border-color:var(--brass);color:#e7c27c}
+.ticket .big{font:800 44px/1 var(--font-display);margin:16px 0 4px}
+.ticket .sm{font-size:13px;opacity:.75}
+.ticket dl{display:grid;grid-template-columns:1fr auto;gap:6px 12px;margin:16px 0 0;font-size:14px}
+.ticket dd{margin:0;font-family:var(--font-mono);text-align:right}
+.ticket hr{border:0;border-top:1px dashed rgba(255,255,255,.25);margin:16px 0}
+.price-note{font-size:13px;line-height:1.45;background:rgba(255,255,255,.07);border-radius:6px;padding:10px 12px}
+.ticket .btn{width:100%;justify-content:center;margin-top:12px}
+.ticket .btn.ghost{color:var(--paper);border-color:rgba(255,255,255,.35)}
+
+/* catalog */
+.cat-tools{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.cat-tools .field{flex:1 1 260px}
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+table{border-collapse:collapse;width:100%;min-width:760px;font-size:14px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:500 12px/1.2 var(--font-mono);text-transform:uppercase;letter-spacing:.05em;color:var(--muted);background:var(--paper);position:sticky;top:0}
+td.q{font-family:var(--font-mono);text-align:center;white-space:nowrap}
+td.id{font-family:var(--font-mono);color:var(--muted);white-space:nowrap}
+.cat-more{display:flex;justify-content:center;padding:14px}
+
+/* how */
+.how{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;counter-reset:s}
+@media (max-width:900px){.how{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:520px){.how{grid-template-columns:1fr}}
+.how li{list-style:none;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px;counter-increment:s}
+.how li::before{content:counter(s,decimal-leading-zero);display:block;font:500 13px/1 var(--font-mono);color:var(--brass);margin-bottom:12px}
+.how li b{display:block;font:700 17px/1.25 var(--font-display);margin-bottom:6px}
+.how li span{font-size:14px;color:var(--muted)}
+.how{padding:0;margin:0}
+
+.supply{display:grid;grid-template-columns:1.1fr .9fr;gap:24px;align-items:start}
+@media (max-width:900px){.supply{grid-template-columns:1fr}}
+.supply ul{margin:12px 0 0;padding-left:18px;color:var(--muted)}
+.supply li{margin:4px 0}
+
+/* form dialog */
+dialog{border:1px solid var(--line);border-radius:12px;padding:0;max-width:560px;width:calc(100% - 32px);background:var(--card);color:var(--ink)}
+dialog::backdrop{background:rgba(10,14,13,.55)}
+.dlg{padding:22px;display:grid;gap:14px}
+.dlg .row .field{flex:1 1 200px}
+.dlg pre{white-space:pre-wrap;font:12px/1.5 var(--font-mono);background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:12px;max-height:220px;overflow:auto;margin:0}
+.dlg .acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+.okmsg{background:var(--sage-soft);color:var(--sage);border-radius:6px;padding:10px 12px;font-size:14px}
+
+footer{border-top:1px solid var(--line);padding:28px 0 40px;font-size:13px;color:var(--muted)}
+footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#top"><span class="plate">101</span>Номерок</a>
+    <nav class="main" aria-label="Разделы">
+      <a href="#config">Конфигуратор</a>
+      <a href="#catalog">Каталог</a>
+      <a href="#supply">Расходники</a>
+      <a href="#how">Как работаем</a>
+    </nav>
+    <span class="proto" title="Рабочее название и демо-данные">Прототип</span>
+  </div>
+</header>
+
+<main id="top">
+  <div class="wrap hero">
+    <div>
+      <h1>Номер под ключ по стандарту сетевого отеля</h1>
+      <p class="lead">Для мини-отелей, апарт-отелей, гостевых домов и глэмпингов. Выберите уровень номера — получите полную ведомость оснащения: от инсталляции унитаза до беруш, с альтернативами и поставкой со складов сети.</p>
+      <div class="facts">
+        <div class="fact"><b class="tnum" id="f-items">200</b><span>позиций в стандарте</span></div>
+        <div class="fact"><b>3</b><span>уровня номера</span></div>
+        <div class="fact"><b>9</b><span>зон оснащения</span></div>
+      </div>
+      <div class="cta">
+        <a class="btn" href="#config">Собрать номер</a>
+        <a class="btn ghost" href="#catalog">Смотреть каталог</a>
+      </div>
+    </div>
+    <div class="plan" aria-label="План номера с зонами оснащения">
+      <svg viewBox="0 0 520 340" role="img" aria-labelledby="plan-t">
+        <title id="plan-t">Схема 2-местного номера: нажмите зону, чтобы открыть её в конфигураторе</title>
+        <g class="zone" data-zone="Санузел" tabindex="0"><rect x="10" y="10" width="150" height="150" rx="2"/><text x="22" y="34">САНУЗЕЛ</text><text x="22" y="52" class="zc" data-c="Санузел"></text></g>
+        <g class="zone" data-zone="Двери и система доступа" tabindex="0"><rect x="10" y="170" width="150" height="70" rx="2"/><text x="22" y="194">ДВЕРИ · ЗАМОК</text><text x="22" y="212" class="zc" data-c="Двери и система доступа"></text></g>
+        <g class="zone" data-zone="Мебель и спальное место" tabindex="0"><rect x="170" y="10" width="200" height="230" rx="2"/><text x="182" y="34">СПАЛЬНОЕ МЕСТО · МЕБЕЛЬ</text><text x="182" y="52" class="zc" data-c="Мебель и спальное место"></text>
+          <rect x="200" y="80" width="140" height="130" rx="4" style="fill:none;stroke-dasharray:4 3"/><text x="232" y="150">2 × 90×200</text></g>
+        <g class="zone" data-zone="Техника и оснащение" tabindex="0"><rect x="380" y="10" width="130" height="110" rx="2"/><text x="392" y="34">ТЕХНИКА</text><text x="392" y="52" class="zc" data-c="Техника и оснащение"></text></g>
+        <g class="zone" data-zone="Свет и электрика" tabindex="0"><rect x="380" y="130" width="130" height="110" rx="2"/><text x="392" y="154">СВЕТ · ЭЛЕКТРИКА</text><text x="392" y="172" class="zc" data-c="Свет и электрика"></text></g>
+        <g class="zone" data-zone="Текстиль" tabindex="0"><rect x="10" y="250" width="160" height="80" rx="2"/><text x="22" y="274">ТЕКСТИЛЬ</text><text x="22" y="292" class="zc" data-c="Текстиль"></text></g>
+        <g class="zone" data-zone="Расходные материалы и amenities" tabindex="0"><rect x="180" y="250" width="150" height="80" rx="2"/><text x="192" y="274">AMENITIES</text><text x="192" y="292" class="zc" data-c="Расходные материалы и amenities"></text></g>
+        <g class="zone" data-zone="Отделка" tabindex="0"><rect x="340" y="250" width="80" height="80" rx="2"/><text x="352" y="274">ОТДЕЛКА</text><text x="352" y="292" class="zc" data-c="Отделка"></text></g>
+        <g class="zone" data-zone="Декор и интерьер" tabindex="0"><rect x="430" y="250" width="80" height="80" rx="2"/><text x="442" y="274">ДЕКОР</text><text x="442" y="292" class="zc" data-c="Декор и интерьер"></text></g>
+      </svg>
+      <div class="cap"><span>Схема условная: 2-местный номер</span><span class="mono" id="plan-level">уровень: Стандарт</span></div>
+    </div>
+  </div>
+
+  <section class="block" id="config">
+    <div class="wrap">
+      <div class="sec-head">
+        <div>
+          <h2>Конфигуратор номера</h2>
+          <p>Базовый комплект собран по стандарту наполнения сети. Снимите лишнее, добавьте опции, замените позицию на альтернативу — ведомость пересчитается на нужное число номеров.</p>
+        </div>
+      </div>
+      <div class="cfg">
+        <div class="steps">
+          <div class="panel">
+            <h3><span class="step-n">1</span>Уровень номера</h3>
+            <div class="levels" id="levels" role="radiogroup" aria-label="Уровень номера"></div>
+          </div>
+          <div class="panel">
+            <h3><span class="step-n">2</span>Объект</h3>
+            <div class="row">
+              <div class="field"><label for="rooms">Номеров</label><input id="rooms" type="number" min="1" max="500" value="10"></div>
+              <div class="field"><label for="ptype">Тип объекта</label>
+                <select id="ptype"><option>Мини-отель</option><option>Апарт-отель</option><option>Гостевой дом</option><option>Глэмпинг</option><option>Санаторий / реконструкция</option></select></div>
+              <div class="field"><label for="city">Город доставки</label><input id="city" type="text" placeholder="например, Сочи"></div>
+            </div>
+          </div>
+          <div class="panel">
+            <h3><span class="step-n">3</span>Состав комплекта</h3>
+            <div class="zones-nav" id="zones-nav" aria-label="Фильтр по зонам"></div>
+            <div id="items"></div>
+          </div>
+        </div>
+        <aside class="summary" aria-label="Итог">
+          <div class="ticket">
+            <div class="lv"><span class="sm">Ведомость оснащения</span><span class="plate" id="t-plate">С-201</span></div>
+            <div class="big tnum" id="t-pos">0</div>
+            <div class="sm">позиций в комплекте одного номера</div>
+            <dl class="tnum">
+              <dt>Номеров</dt><dd id="t-rooms">10</dd>
+              <dt>Единиц на объект, шт</dt><dd id="t-units">0</dd>
+              <dt>Отделка (ковролин, обои, плитка), м²</dt><dd id="t-m2">0</dd>
+              <dt>Опций добавлено</dt><dd id="t-opts">0</dd>
+              <dt>Замен на альтернативы</dt><dd id="t-alts">0</dd>
+            </dl>
+            <hr>
+            <div class="price-note">Цены появятся после подключения прайсов поставщиков. Сейчас ведомость уходит менеджеру — КП с ценами и сроками со склада придёт в ответ.</div>
+            <button class="btn brass" id="open-req" type="button">Получить КП по ведомости</button>
+            <button class="btn ghost" id="copy-spec" type="button">Скопировать ведомость</button>
+            <div class="sm" id="copy-msg" role="status" aria-live="polite" style="margin-top:8px"></div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="catalog">
+    <div class="wrap">
+      <div class="sec-head">
+        <div>
+          <h2>Каталог позиций</h2>
+          <p>Все позиции стандарта с количеством на номер по уровням. «опц.» — позиция есть в стандарте, количество подбирается под объект.</p>
+        </div>
+      </div>
+      <div class="cat-tools">
+        <div class="field"><label for="q">Поиск по названию, бренду или артикулу</label><input id="q" type="text" placeholder="например, Cersanit, полотенце, RFID"></div>
+        <div class="field" style="flex:0 1 280px"><label for="cz">Зона</label><select id="cz"><option value="">Все зоны</option></select></div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>ID</th><th>Позиция</th><th>Зона</th><th>Эконом</th><th>Стандарт</th><th>Комфорт</th><th>Ед.</th></tr></thead>
+          <tbody id="cat-body"></tbody>
+        </table>
+        <div class="cat-more"><span class="muted" id="cat-count"></span>&nbsp;&nbsp;<button class="btn ghost" id="cat-more" type="button">Показать ещё</button></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="supply">
+    <div class="wrap supply">
+      <div>
+        <h2>Расходники и текстиль по графику</h2>
+        <p class="muted" style="max-width:38em">Оснащение номера — разовая покупка. Amenities, бумага, мыло-пена и полотенца нужны каждый месяц. Поставляем по графику по той же ведомости, с логотипом отеля на позициях, где стандарт это предусматривает.</p>
+        <ul id="logo-list"></ul>
+      </div>
+      <div class="panel">
+        <h3>Что входит в поставку по графику</h3>
+        <p class="muted" style="margin:0 0 10px">Зоны «Расходные материалы и amenities» и «Текстиль»: <b class="tnum" id="sup-count">0</b> позиций стандарта, из них с логотипом — <b class="tnum" id="sup-logo">0</b>.</p>
+        <a class="btn ghost" href="#config" id="sup-go">Открыть в конфигураторе</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="how">
+    <div class="wrap">
+      <div class="sec-head"><div><h2>Как работаем</h2></div></div>
+      <ol class="how">
+        <li><b>Ведомость</b><span>Собираете номер в конфигураторе или присылаете планировку — подбираем размеры раковины, поддона, штор.</span></li>
+        <li><b>КП с ценами склада</b><span>Цены поставщиков сети, сроки и склад отгрузки по каждой позиции. Альтернативы, если что-то не в наличии.</span></li>
+        <li><b>Поставка</b><span>Отгрузка со складов сети, сборные машины на объект. Счёт и закрывающие документы для юрлица.</span></li>
+        <li><b>Расходники</b><span>Подписка на amenities и текстиль: тот же стандарт, график поставки под загрузку.</span></li>
+      </ol>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>«Номерок» — рабочее название. Прототип: данные — стандарт наполнения номеров (версия от 03.09), цены не подключены, заявки не отправляются.</span>
+    <span class="mono">B2B · HoReCa</span>
+  </div>
+</footer>
+
+<dialog id="req" aria-labelledby="req-h">
+  <form class="dlg" id="req-form" method="dialog">
+    <h3 id="req-h">Заявка на КП</h3>
+    <div class="row">
+      <div class="field"><label for="r-name">Имя</label><input id="r-name" type="text" required autocomplete="name"></div>
+      <div class="field"><label for="r-org">Объект / компания</label><input id="r-org" type="text"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label for="r-phone">Телефон</label><input id="r-phone" type="tel" required autocomplete="tel"></div>
+      <div class="field"><label for="r-mail">Почта</label><input id="r-mail" type="email" autocomplete="email"></div>
+    </div>
+    <div class="field"><label for="r-when">Когда нужна поставка</label>
+      <select id="r-when"><option>В течение месяца</option><option>1–3 месяца</option><option>Позже, считаем бюджет</option></select></div>
+    <div class="field"><label for="r-spec">Ведомость (уйдёт вместе с заявкой)</label><pre id="r-spec"></pre></div>
+    <div class="okmsg" id="r-ok" hidden>Прототип: заявка не отправлена. В рабочей версии она уйдёт менеджеру вместе с ведомостью.</div>
+    <div class="acts">
+      <button class="btn ghost" type="button" id="r-close">Закрыть</button>
+      <button class="btn brass" type="submit" id="r-send">Отправить заявку</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+const DATA = [{"i":"HX-001","z":"Санузел","t":"Раковина","n":"РАКОВИНА COMO 50, 60, 80 (размер подбирается исходя из размеров сан узла)","s":"Прямоугольная мебельная раковина COMO с отверстием под смеситель, размер раковины 50 см.","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":""},{"i":"HX-002","z":"Санузел","t":"Инсталляция раковина","n":"VITRA Рама скрыт.монтажа д/раковины к стене (старый арт. 780-2800) 880-2800","s":"","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":""},{"i":"HX-003","z":"Санузел","t":"Консоль для раковины","n":"Консоль для раковины - металл в порошковой камерной окраске, цвет матовое серебро (RAL 9006)","s":"","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":""},{"i":"HX-004","z":"Санузел","t":"Сифон для умывальника","n":"ALCAPLAST Сифон для умывальника Ø32, цельнометаллический, с водосливом 5/4\" A437","s":"","u":"шт","q":{"e":0,"s":0,"c":0},"a":[],"r":""},{"i":"HX-005","z":"Санузел","t":"Унитаз напольный","n":"CERSANIT УНИТАЗ КОМПАКТ JUST 031 3/6 TPL","s":"Напольный унитаз-компакт с полипропиленовым сиденьем с плавным закрыванием. Двухуровневая арматура с механизмом смыва ИнкоЭр 3/6л.","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":""},{"i":"HX-006","z":"Санузел","t":"Унитаз подвесной к инсталляции","n":"CERSANIT Унитаз подвесной BRASKO Vortex DPL EO slim, белый микролифт, тонкое A68915","s":"","u":"шт","q":{"e":0,"s":0,"c":0},"a":[],"r":""},{"i":"HX-007","z":"Санузел","t":"Инсталляция для унитаза","n":"JACOB DELAFON Система инсталляции OUT OF COL 3/6л e29025-nf с кнопкой смыва хром e29027-cp E21822-CP","s":"JACOB DELAFON Система инсталяции OUT OF COL 3/6л e29025-nf с кнопкой смыва хром e29027-cp E21822-CP","u":"шт","q":{"e":0,"s":0,"c":0},"a":["Cersanit Система инсталяции"],"r":""},{"i":"HX-008","z":"Санузел","t":"Смеситель раковина вар.1","n":"JACOB DELAFON Смеситель для раковины Elite E32908-CP","s":"","u":"шт","q":{"e":0,"s":0,"c":0},"a":[],"r":""},{"i":"HX-009","z":"Санузел","t":"Смеситель раковина вар.2","n":"CERSANIT Смеситель NATURE ДЛЯ РАКОВИНЫ A63063","s":"","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":""},{"i":"HX-010","z":"Санузел","t":"Смеситель раковина вар.3","n":"смеситель AM PM","s":"","u":"шт","q":{"e":0,"s":0,"c":0},"a":[],"r":""},{"i":"HX-011","z":"Санузел","t":"Душ. Уголок вариант 1","n":"Душевой уголок Niagara Eco NG-003-14 (80х80х195) низкий поддон(13см),стекло матовое,2 места","s":"на выбор","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":""},{"i":"HX-012","z":"Санузел","t":"Душ. уголок вариант 2","n":"Душевое ограждение Loranto 80х80х195, поддон 13 см CS-8005S","s":"на выбор","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":""},{"i":"HX-013","z":"Санузел","t":"К душевому уголку","n":"Комплект роликов (8шт)к душ. кабинам OSK (двойной верх, одинарный низ) CS00006111","s":"","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":""},{"i":"HX-014","z":"Санузел","t":"К душевому уголку","n":"Душевой поддон 900х900, универсальный, белый","s":"размеры: 900 x 900 мм глубина: 30 мм материал: акрил диаметр сливного отверстия: 90 мм","u":"шт","q":{"e":1.0},"a":[],"r":""},{"i":"HX-015","z":"Санузел","t":"К душевому уголку","n":"ALCAPLAST Сниженный сифон для душевого поддона, хром","s":"Для слива воды из душевых поддонов Для душевых поддонов со сливным отверстием Ø90 мм Для душевых поддонов без перелива","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":""},{"i":"HX-016","z":"Санузел","t":"Смеситель для ванны","n":"CERSANIT Смеситель для ванны FLAVIS с длинным изливом A64093","s":"","u":"шт","q":{"e":0,"s":0,"c":0},"a":[],"r":"A64093"},{"i":"HX-017","z":"Санузел","t":"Душ. Уголок","n":"Cersanit ДУШЕВОЙ ГАРНИТУР VIBE 63067","s":"Цвет хром Тип продукта Душевой гарнитур Материал шланга сталь Длина шланга, см 150 Количество режимов 3 Гарантия 2 года Вес (без упаковки), кг 1.2 Вес (в упаковке), кг 1.4 Штрихкод 5901771011248 Комплектация душевая лейка, стойка, душевой ш","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":"63067"},{"i":"HX-018","z":"Санузел","t":"Душ. Уголок","n":"Cersanit СМЕСИТЕЛЬ CERSANIA ДЛЯ ДУША 63032","s":"Цвет хром Тип продукта Смеситель Назначение для душа Материал латунь Гарантия 12 лет Вес (без упаковки), кг 1.1 Вес (в упаковке), кг 1.3","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":"63032"},{"i":"HX-019","z":"Санузел","t":"Душ. Уголок","n":"ALCAPLAST Сливной трап 105×105/50 мм боковой сток, решетка из нержавеющей стали, гидрозатвор комбинированный SMART","s":"Массивная нержавеющая решетка 102x102x5 мм Регулируемая по высоте горловина 9-95 мм Изоляционный воротник для удобного монтажа гидроизоляции пола Боковое подключение к канализационному стоку Ø50 мм Гидрозатвор – комбинированный SMART Водяно","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":["Сливной трап 105×105/50 мм прямой сток, решетка из нержавеющей стали, гидрозатвор комбинированный SMART"],"r":"APV31"},{"i":"HX-020","z":"Санузел","t":"Полотенцесушитель","n":"NIKA Полотенцесушитель М.-3/4 50/50 водяной без полки + Декор.чашка (отражатель) 3/4\"высокий 904ST05 2шт","s":"","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":""},{"i":"HX-021","z":"Санузел","t":"Керамогранит в эконом с\\у","n":"Каприччо серый глянцевый 20x30x0,69 затирка в цвет, арт.8353","s":"","u":"шт","q":{"e":0},"a":[],"r":""},{"i":"HX-022","z":"Санузел","t":"Керамогранит в эконом с\\у","n":"Каприччо белый глянцевый 20x30x0,69 затирка в цвет, арт.8352","s":"","u":"шт","q":{"e":0},"a":[],"r":""},{"i":"HX-023","z":"Санузел","t":"Керамогранит в эконом с\\у","n":"Каприччо серый матовый 40,2x40,2x0,8 затирка в цвет, арт.SG172100N","s":"","u":"шт","q":{"e":0},"a":[],"r":""},{"i":"HX-024","z":"Санузел","t":"Аксессуары","n":"Урна в номер","s":"","u":"шт","q":{"e":0,"s":0,"c":0},"a":[],"r":""},{"i":"HX-025","z":"Санузел","t":"Аксессуары","n":"Ведро под мусор","s":"Ведро 5Л Ведро 8Л","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":"Ведро 5 л / 8л"},{"i":"HX-026","z":"Санузел","t":"Аксессуары","n":"\"KVADRO\" Полка для полотенец (40 СМ) FX-61316","s":"Вид:Полка Материал:Латунь Форма:Прямоугольная Цвет:Хром Монтаж/Установка:Подвесной Размер:430*40*210 мм","u":"шт","q":{"e":1.0,"s":1.0},"a":[],"r":"FX-61316"},{"i":"HX-027","z":"Санузел","t":"Аксессуары","n":"HOTEL Полка угловая одноэтажная с пластиковой вставкой FX-31003D","s":"Материал - металл Высота 6 см Ширина 22 см Глубина 22 см Угловая","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":"FX-31003D"},{"i":"HX-028","z":"Санузел","t":"Аксессуары","n":"\"METRA\" Крючок двойной FX-11105A","s":"Крючок для банных полотенец и халатов. Материал - хромированная латунь.","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":"FX-11105A"},{"i":"HX-029","z":"Санузел","t":"Аксессуары","n":"\"KVADRO\" Ерш для туалета+дополнительная щетка FX-61313","s":"Форма:Цилиндр Цвет:Хром/Белый Материал:Стекло, латунь, пластик Монтаж:Подвесной","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":"FX-61313"},{"i":"HX-030","z":"Санузел","t":"Аксессуары","n":"\"KVADRO\" Подстаканник двойной FX-61307","s":"Материал: латунь, метсплав. Покрытие: никель-хром. Упаковка: двойной блистер. (Глубина х длина х высота): 8,5 х 19 х 9,5 см. Диаметр: 6,5х2 см","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":"FX-61307"},{"i":"HX-031","z":"Санузел","t":"Аксессуары","n":"\"KVADRO\" Бумагодержатель с крышкой FX-61310","s":"","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":"FX-61310"},{"i":"HX-032","z":"Санузел","t":"Аксессуары","n":"\"KVADRO\" Держатель запасного рулона FX-61310B","s":"Материал латунь Габариты без упаковки, мм 190x80x110 Цвет хром Полочка для телефона нет Длина, мм 190 Поверхность глянцевая Тип установки настенный","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":"FX-61310B"},{"i":"HX-033","z":"Санузел","t":"Аксессуары","n":"\"KVADRO\" Полотенцедержатель трубчатый (60 см.) FX-61301","s":"Монтаж: подвесной Материал: латунь Ширина, см: 61 Глубина, см: 7.5 Высота, см: 4.5 Гарантия: 5 лет Метод крепления: шурупы Область применения: бытовая Страна: Чехия","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":"FX-61301"},{"i":"HX-034","z":"Санузел","t":"Зеркало","n":"Зеркало NORMA с верхней подсветкой","s":"Зеркало (Ширина 400* Высота 800)с сенсорным выключателем Толщина полотна:4мм Материал корпуса:АБС пластик, пластиковый короб Комплектность: LED подсветка, сенсорный выключатель. Гарантия: 1 год Скругленные края","u":"шт","q":{"e":1.0,"s":1.0},"a":[],"r":""},{"i":"HX-035","z":"Санузел","t":"Фен","n":"Фен для волос BXG /\"Puff-1200\", белый, 1,2 кВт /","s":"Материал корпуса: ABS-пластик Цвет: белый Мощность (Вт): 1 200 Напряжение (В/Гц): 220 / 50-60 Скорость воздушного потока (м/сек): 17 Температурный режим (°C): 65±15 (горячий) Габаритные размеры (мм)(ШхГхВ): 210х100х182 Вес нетто (кг): 0,65","u":"шт","q":{"e":1.0},"a":["Фен для волос BXG-1200-H1"],"r":"Amaks"},{"i":"HX-036","z":"Санузел","t":"Светильник потолочный","n":"Светильник PVC встраиваемый светодиодный CCT IP65 ZoccoIP65 либо любой другой аналогичный от Русского Света/ЭТМ","s":"Диаметр 120-170мм IP 55-65 Обращайте внимание на световой поток, запрашивайте у РС/ЭТМ аналоги не менее 900-1000 люменов","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":"223124"},{"i":"HX-037","z":"Санузел","t":"Душевые ограждения/Перегородки","n":"Прямая душевая перегородка с одним стационарным полотном и с распашной дверью Фурнитура Полированный хром Стекло закалённое прозрачное, еврокромка","s":"","u":"шт","q":{"e":0,"s":0,"c":0},"a":[],"r":""},{"i":"HX-038","z":"Санузел","t":"К душевому уголку","n":"Душевой поддон GROHE 900х900, универсальный, белый 39301000","s":"размеры: 900 x 900 мм глубина: 30 мм материал: акрил диаметр сливного отверстия: 90 мм","u":"шт","q":{"s":1.0,"c":1.0},"a":[],"r":""},{"i":"HX-039","z":"Санузел","t":"Керамогранит в стандарт","n":"ДЕКОР ГРАН ПАЛЕ СЕРЫЙ МОЗАИЧНЫЙ ГЛЯНЦЕВЫЙ 25Х4, затирка в цвет","s":"","u":"м2","q":{"s":16.0,"c":16.0},"a":["ДЕКОР МАРМИОН СЕРЫЙ МОЗАИЧНЫЙ ГЛЯНЦЕВЫЙ 25Х40"],"r":""},{"i":"HX-040","z":"Санузел","t":"Керамогранит в стандарт","n":"ГРАН ПАЛЕ БЕЛЫЙ ГЛЯНЦЕВЫЙ 25Х4 затирка в цвет","s":"","u":"шт","q":{"s":0,"c":0},"a":[],"r":""},{"i":"HX-041","z":"Санузел","t":"Керамогранит в стандарт","n":"ГРАН ПАЛЕ СЕРЫЙ ГЛЯНЦЕВЫЙ 25Х40 затирка в цвет","s":"","u":"шт","q":{"s":0,"c":0},"a":[],"r":""},{"i":"HX-042","z":"Санузел","t":"Керамогранит в стандарт","n":"ГРАН ПАЛЕ СЕРЫЙ ОБРЕЗНОЙ 50,2Х50,2 затирка в цвет","s":"","u":"шт","q":{"s":0,"c":0},"a":["ДЕКОР ГРАН ПАЛЕ СЕРЫЙ МОЗАИЧНЫЙ ГЛЯНЦЕВЫЙ 25Х40","ДЕКОР ГРАН ПАЛЕ БЕЛЫЙ МОЗАИЧНЫЙ ГЛЯНЦЕВЫЙ 25Х40"],"r":""},{"i":"HX-043","z":"Санузел","t":"Фен","n":"Фен для волос \"Puff-1200\", белый, 1,2 кВт","s":"Материал корпуса: ABS-пластик Цвет: белый Мощность (Вт): 1 200 Напряжение (В/Гц): 220 / 50-60 Скорость воздушного потока (м/сек): 17 Температурный режим (°C): 65±15 (горячий) Габаритные размеры (мм)(ШхГхВ): 210х100х182 Вес нетто (кг): 0,65","u":"шт","q":{"s":1.0,"c":1.0},"a":["Фен для волос BXG-1200-H1"],"r":"Amaks"},{"i":"HX-044","z":"Санузел","t":"Биде","n":"Jacob Delafon или Cersanit или Vitra Инсталляции для биде для монтажа перед стеной","s":"","u":"шт","q":{"c":1.0},"a":[],"r":""},{"i":"HX-045","z":"Санузел","t":"Биде","n":"Jacob Delafon или Cersanit или Vitra или AM PM Смеситель однорычажный для биде","s":"","u":"шт","q":{"c":1.0},"a":[],"r":""},{"i":"HX-046","z":"Санузел","t":"Биде","n":"ALCAPLAST сифон для умывальника и биде DN40 пластик","s":"","u":"шт","q":{"c":1.0},"a":[],"r":"A45F-DN40"},{"i":"HX-047","z":"Санузел","t":"Биде","n":"Cersanit БИДЕ DELFI ПОДВЕСНОЕ BI-DELFI-Z","s":"","u":"шт","q":{"c":1.0},"a":[],"r":"BI-DELFI-Z"},{"i":"HX-048","z":"Санузел","t":"Биде","n":"CERSANIT СМЕСИТЕЛЬ С ГИГИЕНИЧЕСКИМ ДУШЕМ VERO A64106","s":"","u":"шт","q":{"c":1.0},"a":[],"r":"A64106"},{"i":"HX-049","z":"Санузел","t":"Полотенцесушитель","n":"Полотенцесуш М-обр 3/4\" 500х500 б/к","s":"","u":"шт","q":{"c":1.0},"a":[],"r":"650550200"},{"i":"HX-050","z":"Санузел","t":"Аксессуары","n":"\"KVADRO\" Полка для полотенец (59 см) FX-61315","s":"Габариты (Ш Г В): 59x25x12 см Латунь Цвет хром Глянцевая Оснащение:полотенцедержатель","u":"шт","q":{"c":1.0},"a":[],"r":"FX-61315"},{"i":"HX-051","z":"Санузел","t":"Аксессуары","n":"Косметическое зеркало Fixsen Hotel D15 FX-31021","s":"","u":"шт","q":{"c":1.0},"a":[],"r":"D15 FX-31021"},{"i":"HX-052","z":"Санузел","t":"Зеркало","n":"Зеркало подсветка по кругу","s":"Зеркало (Ширина 500* Высота 800)с сенсорным выключателем и подогревом Толщина полотна:4мм Материал корпуса:АБС пластик, пластиковый короб Комплектность: LED подсветка, сенсорный выключатель. Гарантия: 1 год Скругленные края","u":"шт","q":{"c":1.0},"a":["Зеркало NORMA"],"r":""},{"i":"HX-053","z":"Двери и система доступа","t":"Входная Дверь","n":"Блок дверной ВХОДНОЙ В НОМЕР (ОТКРЫВАНИЕ В НОМЕР) одинарный деревянный глухой, EI-30/35db, CPL, в комплекте: полотно с притвором огнестойкое, с вспенивающимся уплотнителем по торцам, коробка блочная из инженерного массива размер 50*92 мм, однорядный силиконизированный уплотнитель, однорядный вспенивающийся уплотнитель, выдвижной противодымный огнезащитный порог 13*30 мм - 1 шт, комплект петель Abloy NTR 110*30, подготовка под эл.мех замок заказчика.Усиление под установку доводчика. Комплект телескопических наличников на 1-у сторону 10*70*2200, отделка CPL Слотекс Дуб Французский. БЕЗ ДОБОРА.","s":"Автоматический порог FORBSA UNI Глазок дверной DL (хром) Стопор напольный EURO (хром) Комплект доборов на толщину стены до 200 мм ( 3 шт) отделка CPL Слотекс Дуб Французский Комплект галтель 20х20х2070 мм (3 шт) отделка CPL Слотекс Дуб Фран","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":""},{"i":"HX-054","z":"Двери и система доступа","t":"Межкомнатная","n":"Блок дверной одинарный деревянный глухой,заполнение СОТ, отделка CPL Слотекс Дуб Французский, в комплекте: полотно с четвертью, коробка блочная из инженерного массива 40*92 мм, силиконизированный уплотнитель, комплект петель NTR 110*30 (хром), замок PZ, присадка DIN. Комплект телескопических наличников на 2-е стороны 10*70*2200 мм (5 шт), отделка наличников пластик CPL Слотекс Дуб Французский. БЕЗ ДОБОРА","s":"Гарнитур дверной L-form (нерж. сталь) на розетке с ключивиной под цилиндр PZ, произв. FUARO Цилиндр 28x34мм (хром) с комплектом ключей Стопор напольный EURO (хром)","u":"шт","q":{"e":0,"s":0,"c":0},"a":[],"r":""},{"i":"HX-055","z":"Двери и система доступа","t":"Сан Узловая","n":"Блок дверной САНУЗЛОВОЙ (ОТКРЫВАНИЕ В НОМЕР) одинарный деревянный глухой, заполнение СОТ, отделка CPL Слотекс Дуб Французский, в комплекте: полотно без четверти, коробка блочная деревянная размер 40*74 мм - инженерный массив, комплект карточных петель, замок WC, присадка DIN. Кромка ПВХ 1 мм с 4 сторон полотна, подрезка полотна 15 мм. Комплект телескопических наличников на 2-е сторону 10*70*2200 мм (5 шт), отделка CPL Слотекс Дуб Французский. БЕЗ ДОБОРА.","s":"Подпятник пластиковый для С/У дверей (комплект 2-шт) Гарнитур дверной L-form (нерж. сталь) на розетке с санузловой повороткой, произв. FUARO","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":""},{"i":"HX-056","z":"Двери и система доступа","t":"Доводчик для дверей","n":"Доводчик Amaks 3000","s":"Черный","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":"102247"},{"i":"HX-057","z":"Двери и система доступа","t":"Доводчик для дверей","n":"Скользящая тяга под доводчик","s":"","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":"68221"},{"i":"HX-058","z":"Двери и система доступа","t":"Доводчик для дверей","n":"Плата монтажная для доводчика EN3","s":"","u":"шт","q":{"e":0,"s":0},"a":[],"r":""},{"i":"HX-059","z":"Двери и система доступа","t":"Доводчик для дверей","n":"Механизм фиксации открытого положения для доводчиков","s":"","u":"шт","q":{"e":0,"s":0},"a":[],"r":""},{"i":"HX-060","z":"Двери и система доступа","t":"Система электронного замка","n":"Замок электронный","s":"Замок электронный HSU 9936-S","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":""},{"i":"HX-061","z":"Двери и система доступа","t":"Система электронного замка","n":"Выключатель электрический энергосберегающий для гостиничных номеров","s":"","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":""},{"i":"HX-062","z":"Двери и система доступа","t":"Система электронного замка","n":"подрозетник для карточного выглючателя (гипсокартон/бетон)","s":"83*83*50","u":"шт","q":{"e":0},"a":[],"r":""},{"i":"HX-063","z":"Двери и система доступа","t":"Система электронного замка","n":"Карта контактная Vision RFID 4,5V","s":"","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":""},{"i":"HX-064","z":"Двери и система доступа","t":"Система электронного замка","n":"Энкодер-апдейтер RFID","s":"Mifare Card Encoder","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":""},{"i":"HX-065","z":"Двери и система доступа","t":"","n":"подрозетник для карточного выглючателя","s":"83*83*50","u":"шт","q":{"s":0,"c":0},"a":[],"r":""},{"i":"HX-066","z":"Двери и система доступа","t":"Доводчик для дверей","n":"011230 Плата монтажная для доводчика TS3000 EN3","s":"","u":"шт","q":{"c":1.0},"a":[],"r":""},{"i":"HX-067","z":"Двери и система доступа","t":"Доводчик для дверей","n":"71924 Механизм фиксации открытого положения для доводчиков TS5000/3000/1500.","s":"","u":"шт","q":{"c":1.0},"a":[],"r":""},{"i":"HX-068","z":"Мебель и спальное место","t":"Плечики","n":"Плечики деревянные с перекладиной и кольцом антивандальные","s":"Плечики деревянные с перекладиной и кольцом","u":"шт","q":{"e":3.0,"s":3.0,"c":3.0},"a":[],"r":""},{"i":"HX-069","z":"Мебель и спальное место","t":"Комплект мебели","n":"Подставка для чемодана 750х450х500 Цвет Дуб Честерфилд 003","s":"Наименование Подставка для чемоданов Габариты 750х450х500 Материал, описание ЛДСП 18мм Кромка Края корпуса облицованы заподлицо с поверхностью элементов кромкой ABC 0,8мм Цвет Дуб Честерфилд 003 Фурнитура Металлические эксцентриковые стяжки","u":"шт","q":{"e":1.0},"a":[],"r":"109469"},{"i":"HX-070","z":"Мебель и спальное место","t":"Корпусная мебель","n":"Панель-вешалка с двумя крючками и зеркалом (правая) эконом 750х1600х18 Цвет Дуб Честерфилд 003","s":"Наименование Панель-вешалка с двумя крючками и зеркалом (левая) Габариты 750х1600х18 Материал, описание ЛДСП 18мм Кромка Края корпуса облицованы заподлицо с поверхностью элементов кромкой ABC 0,8мм Цвет Дуб Честерфилд 003 Зеркало Размер 300","u":"шт","q":{"e":1.0},"a":["Панель вешалка с крючка и зеркалом, левая 750х1600х18 Цвет Дуб Честерфилд 003"],"r":"109471"},{"i":"HX-071","z":"Мебель и спальное место","t":"Корпусная мебель","n":"Гардероб 900х2050х500 Цвет Дуб Честерфилд 003","s":"Наименование Гардероб Габариты 900*2050*500 Материал, описание Все детали, в том числе задняя стенка из ЛДСП 18мм Кромка Края корпуса облицованы заподлицо с поверхностью элементов кромкой ABC 0,4 мм на невидимых поверхностях и 0,8 мм на вид","u":"шт","q":{"e":1.0},"a":["Гардероб с полкой под чемодан эконом 900х2050х500 Дуб Честерфилд 003 (светлый)","Шкаф открытый с местом под мини-холодильник эконом 1000х2050х500 Дуб Честерфилд 003 (светлый)"],"r":"109473"},{"i":"HX-072","z":"Мебель и спальное место","t":"Корпусная мебель","n":"Стол письменный с открытой тумбой под мини-бар, левый 1200х750х500 Цвет Дуб Честерфилд 003","s":"Наименование Стол письменный с тумбой под холодильник,левый Габариты 1200х750х500 Материал, описание ЛДСП 18мм Кромка Края корпуса облицованы заподлицо с поверхностью элементов кромкой ABC 0,4 мм на невидимых поверхностях и 0,8 мм на видимы","u":"шт","q":{"e":1.0},"a":["Стол письменный с открытой тумбой под мини-бар, правый эконом 1200х750х500 Дуб Честерфилд 003 (светлый)","Стол письменный эконом 900х750х500 Дуб Честерфилд 003 (светлый)"],"r":"109475"},{"i":"HX-073","z":"Мебель и спальное место","t":"Корпусная мебель","n":"Стул « Бабочка» Цвет: Слоновая Кость","s":"Наименование Стул-кресло «Бабочка» Габариты 580*450*860 Описание, цвет, материал Материалы: Шпон и массив бука. Цвет: Слоновая Кость Сиденье мягкое, накладное, с овальной передней кромкой. Корпус покрыт итальянским лаком и надежно защищает","u":"шт","q":{"e":2.0,"s":3.0},"a":["Стул «Банкетный»* 580*450*860 Цвет: Слоновая Кость"],"r":""},{"i":"HX-074","z":"Мебель и спальное место","t":"Корпусная мебель","n":"Тумба прикроватная на металлокаркасе (круглая) 400х500 Цвет Дуб Честерфилд 003","s":"Наименование Тумба прикроватная на металлокаркасе (круглая) Габариты D400, высота 500 Материал, описание ЛДСП 18мм, металл Описание Столешница прикроватной тумбы D400 ЛДСП 18 мм.Труба квадратного сечения 20*20мм; цвет: черный матовый- порош","u":"шт","q":{"e":2.0},"a":[],"r":""},{"i":"HX-075","z":"Мебель и спальное место","t":"Корпусная мебель","n":"Основание Бора 90х200","s":"Наименование Основание для матраса Bora Габариты Габаритные размеры основания с опорой - 900х2000х400 (ШхГхВ) Описание, материал Основание для матраса со съемным чехлом на опорах. Чехол крепится к основанию при помощи липуче. Липучку крепят","u":"шт","q":{"e":2.0,"s":2.0},"a":[],"r":""},{"i":"HX-076","z":"Мебель и спальное место","t":"Корпусная мебель","n":"Изголовье для двухместного номера эконом 2900х1200х18 Цвет Дуб Честерфилд 003","s":"Наименование Изголовье для двухместного номера Габариты 2900х1200х18 Материал, описание ЛДСП 18мм Кромка Края корпуса облицованы заподлицо с поверхностью элементов кромкой ABC 0,8мм Цвет Дуб Честерфилд 003 Фурнитура Металлический навес","u":"шт","q":{"e":1.0},"a":["Изголовье для двухместного номера эконом2700х1200х18 Цвет Дуб Честерфилд 003"],"r":"109482"},{"i":"HX-077","z":"Мебель и спальное место","t":"Корпусная мебель","n":"Панель отбойная эконом 2000х600х18 Цвет Дуб Честерфилд 003","s":"ЛДСП 18мм.ЧФМК Дуб Честерфилд светлый 003 Края корпуса облицованы заподлицо с поверхностью элементов кромкой АБС 0,8мм. Фурнитура - Металлический навес.","u":"шт","q":{"e":1.0},"a":[],"r":"109480"},{"i":"HX-078","z":"Мебель и спальное место","t":"Матрас","n":"Матрас Амакс (по ТЗ)","s":"Высота: 20 см Верхняя и нижняя пласть - жаккард с противопожарной об- работкой и простегана с синтепоном. Настилочный слой ППУ высотой 3 см плотностью 30 кг/м3, покрывает обе стороны пружинного блока. Защитный слой листовой войлок, полность","u":"шт","q":{"e":2.0,"s":2.0,"c":2.0},"a":["ASKONA HOTEL SLEEP MASTER 200*090*20 (двусторонний матрас - с металлическими рамками по периметру пружинного блока)"],"r":""},{"i":"HX-079","z":"Мебель и спальное место","t":"Матрас","n":"Детский ортопедический матрас","s":"","u":"шт","q":{"e":0,"s":0,"c":0},"a":[],"r":"TS-200/180"},{"i":"HX-080","z":"Мебель и спальное место","t":"Топпер","n":"Топпер Sleep Standart","s":"Высота: 4 см Крепление: 4 резинки по углам нижней пласти Верхняя пласть и нижняя пласть-огнеупорный жаккард Наполнение ППУ плотностью 16 кг/м3","u":"шт","q":{"e":2.0,"s":2.0,"c":2.0},"a":["топпер Hotel Askona MIDDLE SAFE 200*090*4"],"r":"TS-200/180"},{"i":"HX-081","z":"Мебель и спальное место","t":"Корпусная мебель","n":"Подставка для чемодана 750х450х500 Цвет St28 Н3309 Дуб Гладстоун песочный","s":"Габариты 750х450х500 Материал, описание Тумба открытого типа, с топом, зачищенным полозьями (рейлингами). Корпус тумбы выполнен из ЛДСП толщиной 25 мм (топ, боковины) и 18 мм. Материал плиты устойчив к механическому воздействию Кромка Края ","u":"шт","q":{"s":1.0,"c":1.0},"a":[],"r":"АМ.у-ПЧ"},{"i":"HX-082","z":"Мебель и спальное место","t":"Корпусная мебель","n":"Панель-вешалка с двумя крючками и зеркалом (правая) эконом 750х1600х18 Цвет St28 Н3309 Дуб Гладстоун песочный","s":"Габариты 750х1600х18 Материал, описание ЛДСП 18мм Кромка Края корпуса облицованы заподлицо с поверхностью элементов кромкой ABC 0,8мм Цвет St28 Н3309 Дуб Гладстоун песочный Зеркало Размер 300х1040х4 с фацетом 10мм Фурнитура Металлический на","u":"шт","q":{"s":1.0},"a":["Панель вешалка с крючка и зеркалом, левая 750х1600х18 ST28H3309 Дуб Гладстоун песочный"],"r":"АМ.у-ПВR"},{"i":"HX-083","z":"Мебель и спальное место","t":"Корпусная мебель","n":"Шкаф открытый для верхней одежды со штангой 900х2050х500 Цвет St28 Н3309 Дуб Гладстоун песочный","s":"Габариты 900х2050х500 Материал, описание Шкаф открытый с верхней полкой для одеяла, штангой для одежды. Корпус шкафа выполнен из плиты ЛДСП толщиной 25 мм (топ, боковины) и 18 мм (задняя стенка). Материал плиты устойчив к механическому возд","u":"шт","q":{"s":1.0},"a":["Шкаф открытый 900х2050х500 ST28H3309 Дуб Гладстоун песочный","Шкаф открытый 1200х2050х500 ST28H3309 Дуб Гладстоун песочный"],"r":"АМ.к-ШО90"},{"i":"HX-084","z":"Мебель и спальное место","t":"Корпусная мебель","n":"Открытая секция для минихолодильника 620х2050х500 вар.2 Цвет St28 Н3309 Дуб Гладстоун песочный","s":"Габариты 620х2050х500 Материал, описание Корпус секции выполнен из плиты ЛДСП толщиной 25 мм (боковины) и 18 мм (задняя стенка). Материал плиты устойчив к механическому воздействию. Секция собирается на металлические эксцентриковые стяжки H","u":"шт","q":{"s":1.0,"c":1.0},"a":["Открытая секция для минихолодильника и пуфа 620х2050х500 вар.2 ST28H3309 Дуб Гладстоун песочный"],"r":"АМ.у-ОСХ"},{"i":"HX-085","z":"Мебель и спальное место","t":"Корпусная мебель","n":"Комплект Пенал для посуды с стеклянным фасадом 450х2050х500 Цвет St28 Н3309 Дуб Гладстоун песочный","s":"ЛДСП 18мм. Дуб Гладстоун песочный Н3309 Кромка ПВХ Фурнитура стандартная + комплект 2шт-Петля Sensys 8645i TH53 110гр., для накл. дв.","u":"шт","q":{"s":1.0},"a":[],"r":""},{"i":"HX-086","z":"Мебель и спальное место","t":"Корпусная мебель","n":"Стол письменный 900х750х500 Цвет St28 Н3309 Дуб Гладстоун песочный","s":"Габариты 900х750х480 Материал, описание Стол выполнен из ЛДСП 25 мм (топ и опоры) и 18мм (задняя стенка). Кромка Края корпуса облицованы заподлицо с поверхностью кромкой ABC 0.4мм на невидимых поверхностях и 0.8мм на видимых поверхностях. Ц","u":"шт","q":{"s":1.0,"c":1.0},"a":[],"r":"АМ.у-СП90"},{"i":"HX-087","z":"Мебель и спальное место","t":"Корпусная мебель","n":"Прикроватная тумба круглая на металлокаркасе Цвет St28 Н3309 Дуб Гладстоун песочный","s":"Габариты D400, высота 500 Материал, описание ЛДСП 25 мм, металл Описание Столешница прикроватной тумбы D400 ЛДСП 25 мм.Труба квадратного сечения 20*20мм; цвет: черный матовый- порошковое покрытие RAL 9005; высота 462мм, ширина 440мм. Укомпл","u":"шт","q":{"s":2.0,"c":2.0},"a":[],"r":""},{"i":"HX-088","z":"Мебель и спальное место","t":"Корпусная мебель","n":"Изголовье для двухместного номера 2900х1200х43 Цвет St28 Н3309 Дуб Гладстоун песочный","s":"Габариты 2700х1200х43 Материал, описание ЛДСП 18мм Кромка Края корпуса облицованы заподлицо с поверхностью элементов кромкой ABC 0,8мм Цвет St28 Н3309 Дуб Гладстоун песочный Фурнитура Металлический навес","u":"шт","q":{"s":1.0},"a":["Изголовье для мягкого элемента Техас 2900х1450 Цвет St28 Н3309 Дуб Гладстоун песочный","Изголовье \"Рона\", 2700х1200х43 Цвет St28 Н3309 Дуб Гладстоун песочный","Изголовье \"Рона\", 2900х1200х43 Цвет St28 Н3309 Дуб Гладстоун песочный"],"r":"А17.2"},{"i":"HX-089","z":"Мебель и спальное место","t":"Корпусная мебель","n":"Панель-вешалка с двумя крючками и зеркалом (левая) Цвет St28 Н3309 Дуб Гладстоун песочный","s":"Наименование Панель-вешалка с двумя крючками и зеркалом Габариты 750х1600х18 Материал, описание ЛДСП 18мм Кромка Края корпуса облицованы заподлицо с поверхностью элементов кромкой ABC 0,8мм Цвет St28 Н3309 Дуб Гладстоун песочный Зеркало Раз","u":"шт","q":{"c":1.0},"a":["Панель-вешалка с двумя крючками и зеркалом (правая)"],"r":""},{"i":"HX-090","z":"Мебель и спальное место","t":"Корпусная мебель","n":"Шкаф для одежды и белья* Цвет St28 Н3309 Дуб Гладстоун песочный","s":"Наименование Шкаф для одежды и белья Габариты 900х2050х500 Материал, описание ЛДСП 18мм, ДВП у шкафов в цвет плиты ЛДСП Кромка Края корпуса облицованы заподлицо с поверхностью кромкой ABC 0.4мм на невидимых поверхностях и 0.8мм на видимых п","u":"шт","q":{"c":1.0},"a":["Комплект Шкаф 3-х дверный с черной ручкой профиль 1200х2050х500"],"r":""},{"i":"HX-091","z":"Мебель и спальное место","t":"Корпусная мебель","n":"Панель под ТВ Цвет St28 Н3309 Дуб Гладстоун песочный","s":"Панель под ТВ Габариты 2700х1350х88 Материал, описание Выполнена из ЛДСП 25 мм (топ и опоры) и 18мм (задняя стенка). Кромка Края корпуса облицованы заподлицо с поверхностью кромкой ABC 0.4мм на невидимых поверхностях и 0.8мм на видимых пове","u":"шт","q":{"c":1.0},"a":[],"r":""},{"i":"HX-092","z":"Мебель и спальное место","t":"Корпусная мебель","n":"Журнальный столик 800х600х488 Цвет - черный матовый.","s":"Стол журнальный Габариты 800х600х488 Описание Столешница для журнального стола 800х600х488 мм, ЛДСП 25 мм. Кромка ABC. Подстолье для столика журнального 800х600х450 мм. Металлокаркас - труба квадратная 20х20 мм. Цвет - черный матовый. Цвет ","u":"шт","q":{"c":1.0},"a":[],"r":""},{"i":"HX-093","z":"Мебель и спальное место","t":"Корпусная мебель","n":"Подстолье журнального стола 800х430х600 (з 27/21) черный матовый","s":"Изделие изготовлено из трубы квадратного сечения 20*20, окрашена порошковой краской черный матовый Сварочные швы должны быть тщательно зачищены, при необходимости зашпаклеваны. Укомплектовать фетровыми подпятниками - 6 шт, саморезами по дер","u":"шт","q":{"c":1.0},"a":[],"r":""},{"i":"HX-094","z":"Мебель и спальное место","t":"Корпусная мебель","n":"Прикроватная тумба с ящиком 400х500х420 Цвет St28 Н3309 Дуб Гладстоун песочный","s":"Прикроватная тумба с ящиком Габариты 400*500*420 Материал, описание Столешница, боковины изготавливаются из ЛДСП толщиной топ, боковины - 25мм, остальные детали -18мм. Кромка Края корпуса облицованы заподлицо с поверхностью кромкой ABC 0.4м","u":"шт","q":{"c":1.0},"a":[],"r":""},{"i":"HX-095","z":"Мебель и спальное место","t":"","n":"Чехол на декоративную подушку, 500х700 см, ткань","s":"Чехол съемный, на молнии, ткань Impulsebiruza","u":"шт","q":{"c":1.0},"a":[],"r":""},{"i":"HX-096","z":"Мебель и спальное место","t":"Корпусная мебель","n":"Основное изголовье мягкое «Техас» 2700х1450х63/43","s":"Изголовье «Техас» Описание 2700х1450х63/43 - размеры ЛДСП, цвет Дуб Гладстоун песочный. Мягкая часть: ткань обивки - Bahama Grey. или ткань MAXWELL Жесткая основа: фанера 10 мм , ППУ плотность 20 Крепления Саморезы по дереву черные 3,5*30 -","u":"шт","q":{"c":1.0},"a":["Основное изголовье мягкое «Техас» 2900х1450х63/43","Изголовье мягкое «Филадельфия» 2900х2300х63/43"],"r":""},{"i":"HX-097","z":"Мебель и спальное место","t":"Боковины 2шт","n":"Боковины 2шт. в комплекте, для изголовья мягкого Филадельфия 500х2300х43 ST28 H3309 Дуб Гладстоун песочный","s":"Боковые части изголовья выполнены из ЛДСП 18 и 25 мм (фальшпанели). Комплект из 2-х частей, размером 500х2300х43 каждая. Фурнитура: Металлический навес.","u":"шт","q":{"c":2.0},"a":[],"r":""},{"i":"HX-098","z":"Мебель и спальное место","t":"Корпусная мебель","n":"Зеркало в раме 600х2000х30","s":"Зеркало в раме Габариты 600х2000х30 Материал, описание Зеркало с еврокромкой в алюминиевом профиле 1031 чёрный 200 х 60 см проушины вертикального крепления и защитной противоосколочной плёнкой Крепеж Металлический навес, крючок Boyard K204.","u":"шт","q":{"c":1.0},"a":[],"r":""},{"i":"HX-099","z":"Мебель и спальное место","t":"Корпусная мебель","n":"Стул-кресло «Бабочка»* 580*450*860 Цвет: Слоновая Кость, RAL 1015","s":"Стул-кресло «Бабочка» Габариты 580*450*860 Описание, цвет, материал Материалы: Шпон и массив бука. Цвет: Слоновая Кость, RAL 1015 Сиденье мягкое, накладное, с овальной передней кромкой. Корпус покрыт итальянским лаком и надежно защищает пов","u":"шт","q":{"c":2.0},"a":["Стул «Банкетный»* 580*450*860 Цвет: Слоновая Кость"],"r":""},{"i":"HX-100","z":"Мебель и спальное место","t":"Корпусная мебель","n":"Основание Бора 90х200 (бокс спринг)","s":"Габариты Габаритные размеры основания с опорой - 900х2000х400 (ШхГхВ) Описание, материал Основание для матраса со съемным чехлом на опорах. Чехол крепится к основанию при помощи липуче. Липучку крепят скобой 10мм, 2 ряда, шаг 30мм. Материал","u":"шт","q":{"c":2.0},"a":[],"r":""},{"i":"HX-101","z":"Мебель и спальное место","t":"Корпусная мебель","n":"Панель отбойная 2004х670х18 Цвет St28 Н3309 Дуб Гладстоун песочный","s":"Панель отбойная Габариты 2004х670х18 Материал, описание ЛДСП 18мм Кромка Края корпуса облицованы заподлицо с поверхностью элементов кромкой ABC 0,8мм Цвет St28 Н3309 Дуб Гладстоун песочный Фурнитура Металлический навес","u":"шт","q":{"c":0},"a":[],"r":""},{"i":"HX-102","z":"Мебель и спальное место","t":"Корпусная мебель","n":"Комод 900х750х500 Цвет St28 Н3309 Дуб Гладстоун песочный","s":"Комод Габариты 900х750х500 Материал, описание Столешница, боковины толщиной 25 мм, остальные детали- 18 мм. Кромка Края корпуса облицованы заподлицо с поверхностью кромкой ABC 0.4мм на невидимых поверхностях и 0.8мм на видимых поверхностях.","u":"шт","q":{"c":1.0},"a":[],"r":""},{"i":"HX-103","z":"Мебель и спальное место","t":"Корпусная мебель","n":"Пуф* 420*420*420мм(высота) Цвет Bagama Grey","s":"Пуф Габариты 420*420*420мм(высота) Описание, материал пуф на низких опорах. Материал каркаса: ДСП, массив Наполнитель: мелкие гранулы, поролон Цвет Bagama Grey Пуф* 420*420*420мм(высота) 30 * При невозможности установки второго стула-кресла","u":"шт","q":{"c":1.0},"a":[],"r":""},{"i":"HX-104","z":"Мебель и спальное место","t":"Диван","n":"ДИВАН раскладывающийся Габарит: 1400*900*780 Спальное место: 1000*1985 или ДИВАН раскладывающийся. Габарит: 1600*900*780. Спальное место: 1200*1985","s":"Диван в современном стиле. Имеет прямоугольные формы. Кресло укомплектовано мягкой приспинной подушкой. Механизм трансформации в кровать «ЕВРО». Потянув за переднюю планку кресла, механизм выдвигается вперед. Спальное место образуется из тр","u":"шт","q":{"c":1.0},"a":["Кресло-кровать раскладывающееся. Габарит: 1100*900*780. Спальное место: 700*1985 или Кресло-кровать раскладывающееся. Габарит: 1200*900*780.","ДИВАН раскладывающийся. Габарит: 1900*900*780. Спальное место: 1400*1985 или ДИВАН раскладывающийся. Габарит: 2000*900*780. Спальное место: ","Кресло-кровать раскладывающееся БЕЗ ПОДЛОКОТНИКОВ С ОДНОЙ ПОДУШКОЙ. Габарит: 740*900*780. Спальное место: 700*1985. или Кресло-кровать БЕЗ П","ДИВАН БЕЗ ПОДЛОКОТНИКОВ ПОЛУТОРНЫЙ РАСКЛАДЫВАЮЩИЙСЯ Габарит: 1040 *1050*880 Спальное место: 920*1949 или ДИВАН БЕЗ ПОДЛОКОТНИКОВ ПОЛУТОРНЫЙ "],"r":""},{"i":"HX-105","z":"Отделка","t":"Ковролин","n":"Плотность 1300гр/м2","s":"Состав - 100% полиамид грязеотталкивающая пропитка Scotchgard, разрезной ворс, вес ворса -1100-1200 гр/м2. основа – Action Back, (Искусственный Джут) высота ворса -7мм, Общая высота – 8мм, антистатик, ширина рулонов— 4м, устойчив к ультрафи","u":"м2","q":{"e":17.6,"s":17.6,"c":17.6},"a":["Ламинат TARKETT Navigator 1233 TC-Lock Gulf Stream/ Гольфстрим 1292х194х12"],"r":""},{"i":"HX-106","z":"Отделка","t":"Плинтус(ковролин)","n":"Плинтус ковровый","s":"","u":"пм","q":{"e":18.0,"s":18.0,"c":18.0},"a":["Плинтус для ламината"],"r":""},{"i":"HX-107","z":"Отделка","t":"Обои","n":"CCNS 109(на номер, коридор и изголовье","s":"ПроизводительLSI (Versa Designed Surfaces) CCNS 109(на номер, коридор и изголовье","u":"м2","q":{"e":40.0,"s":40.0,"c":40.0},"a":[],"r":"обои"},{"i":"HX-108","z":"Отделка","t":"Обои (клей)","n":"Клей KIILTO Master Deco","s":"","u":"л","q":{"e":10.0,"s":10.0,"c":10.0},"a":[],"r":"Т6508. 312К"},{"i":"HX-109","z":"Отделка","t":"Натяжной потолок","n":"Полотно Teqtum КМ1/2 или MSD КМ1/2","s":"","u":"шт","q":{"e":0,"s":0,"c":0},"a":[],"r":""},{"i":"HX-110","z":"Свет и электрика","t":"Светильник потолочный большой (таблетка)","n":"Светильники потолочный светодиодный таблетка","s":"Мощность 26-40W 4000K Диаметр ~400мм","u":"шт","q":{"e":0,"s":0,"c":0},"a":[],"r":"таблетка вариант 1"},{"i":"HX-111","z":"Свет и электрика","t":"Светильник потолочный маленький","n":"Встраиваемый светильник Lightstar Zocco LED 223124 или аналог","s":"Диаметр 120-170мм IP 55-65 Обращайте внимание на световой поток, запрашивайте у РС/ЭТМ аналоги не менее 900-1000 люменов","u":"шт","q":{"e":1.0,"s":1.0},"a":[],"r":""},{"i":"HX-112","z":"Свет и электрика","t":"Бра","n":"Настенный светодиодный светильник, 3 Вт,4000К, высота 175 мм","s":"Мощность 3 Вт цветовая температура 4000К диаметр 60 мм высота 175 мм","u":"шт","q":{"e":2.0,"s":2.0,"c":2.0},"a":[],"r":""},{"i":"HX-113","z":"Свет и электрика","t":"Прикроватный спот","n":"Настенный светодиодный светильник, 3 Вт, 4000К, диаметр 60 мм, высота 175 мм","s":"3 Вт, 4000К, диаметр 60 мм, высота 175 мм","u":"шт","q":{"e":2.0,"s":2.0,"c":2.0},"a":["Настенный светодиодный светильник"],"r":""},{"i":"HX-114","z":"Свет и электрика","t":"Электрофурнитура","n":"Выключатель одноклавишный","s":"IEK Brite / Shneider electric Atlas design Цвет алюминий","u":"шт","q":{"e":2.0,"s":2.0,"c":2.0},"a":[],"r":""},{"i":"HX-115","z":"Свет и электрика","t":"Электрофурнитура","n":"проходной выключатель двухклавишный","s":"IEK Brite / Shneider electric Atlas design Цвет алюминий","u":"шт","q":{"e":2.0,"s":2.0,"c":2.0},"a":[],"r":""},{"i":"HX-116","z":"Свет и электрика","t":"Электрофурнитура","n":"Переключатель проходной двухклавишный (перекрестный)","s":"IEK Brite / Shneider electric Atlas design Цвет алюминий","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":""},{"i":"HX-117","z":"Свет и электрика","t":"Электрофурнитура","n":"Розетка","s":"IEK Brite / Shneider electric Atlas design Цвет алюминий","u":"шт","q":{"e":7.0,"s":7.0,"c":7.0},"a":[],"r":""},{"i":"HX-118","z":"Свет и электрика","t":"Электрофурнитура","n":"Розетка ТВ","s":"IEK Brite / Shneider electric Atlas design Цвет алюминий","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":""},{"i":"HX-119","z":"Свет и электрика","t":"Электрофурнитура","n":"Розетка ТФ Телефонная- RJ11","s":"IEK Brite / Shneider electric Atlas design Цвет алюминий","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":""},{"i":"HX-120","z":"Свет и электрика","t":"Электрофурнитура","n":"Коробка распаячная 85*85*55","s":"IEK Brite / Shneider electric Atlas design","u":"шт","q":{"e":4.0,"s":4.0,"c":4.0},"a":[],"r":""},{"i":"HX-121","z":"Свет и электрика","t":"Датчик движения","n":"Датчик движения","s":"ДД 301 800Вт 360град. 6М IP20 бел. IEK LDD11- 301-800-001","u":"шт","q":{"e":0,"s":0,"c":0},"a":[],"r":""},{"i":"HX-122","z":"Свет и электрика","t":"Светильник потолочный маленький","n":"Встраиваемый светильник Lightstar Zocco LED 223124","s":"Пылевлагозащита, IP40 Высота, мм 3 Диаметр, мм 174 Масса, кг 0,312 Цвет арматуры Белый Цвет плафона (Декора) Белый / Матовый","u":"шт","q":{"c":1.0},"a":[],"r":""},{"i":"HX-123","z":"Свет и электрика","t":"Светильный Настольный","n":"Настольный светодиодный светильник, 3 Вт, 4000 К, высота 450 мм, длина 241 мм, диаметр световой части 60 мм, высота 110 мм","s":"3 Вт, 4000 К, высота 450 мм, длина 241 мм, диаметр световой части 60 мм, высота 110 мм","u":"шт","q":{"c":1.0},"a":[],"r":""},{"i":"HX-124","z":"Свет и электрика","t":"Торшер","n":"Напольный светодиодный светильник, 5 Вт, 4000 К, высота 1190 мм, длина 241 мм, диаметр световой части 60 мм, высота 110 мм, цвет хром","s":"5 Вт, 4000 К, высота 1190 мм, длина 241 мм, диаметр световой части 60 мм, высота 110 мм, цвет хром","u":"шт","q":{"c":1.0},"a":[],"r":""},{"i":"HX-125","z":"Свет и электрика","t":"","n":"светодиодная лента 9.6 Вт\\м, 3000К, 12 В, 120 LED\\м (600 LED), 3528 + блок питания","s":"светодиодная лента 9.6 Вт\\м, 3000К, 12 В, 120 LED\\м (600 LED), 3528","u":"шт","q":{"c":1.0},"a":[],"r":""},{"i":"HX-126","z":"Техника и оснащение","t":"Вентилятор вытяжной","n":"Вентилятор вытяжной D100","s":"размер может варьироваться в зависимости от потребности","u":"шт","q":{"e":0,"s":0,"c":0},"a":[],"r":""},{"i":"HX-127","z":"Техника и оснащение","t":"Радиатор","n":"Радиатор Base 500 12 секций нижнее подключение биметалл (Перед производством работ тип и серию радиатора согласовать с управляющей компанией)","s":"(Перед производством работ тип и серию радиатора согласовать с управляющей компанией) Количество секций 12 Площадь обогрева (в м²) 24 Теплоотдача (Вт) 1182 Рабочее давление (бар) 20.0 Максимальное давление (бар) 30.0 Объем (л) 0.96 Тип подв","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":""},{"i":"HX-128","z":"Техника и оснащение","t":"Радиатор","n":"Радиатор PRADO Classic 11x300x1400 (Перед производством работ тип и серию радиатора согласовать с управляющей компанией)","s":"(Перед производством работ тип и серию радиатора согласовать с управляющей компанией) Способ монтажа настенный Число панелей 1 Вид радиатора панельный Материал сталь Подключение боковое Тип радиатора 11 Максимальная температура теплоносител","u":"шт","q":{"e":0,"s":0,"c":0},"a":["Prado Iniversal тип 11 или 12 Перед производством работ тип и серию радиатора согласовать с управляющей компанией"],"r":""},{"i":"HX-129","z":"Техника и оснащение","t":"Тв+кронштейн","n":"Телевизор LG 32LN661H","s":".+ Кронштейн VLK TRENTO-103 black Стандарт для экономов для отелей","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":["Телевизор LG 32LT661Н + Кронштейн VLK TRENTO-103 black","Телевизор LG 43US662H"],"r":""},{"i":"HX-130","z":"Техника и оснащение","t":"Тв+кронштейн","n":"Телевизор LG 43UM662H","s":"плюс кронштейн от пвв","u":"шт","q":{"e":0,"s":0,"c":0},"a":[],"r":""},{"i":"HX-131","z":"Техника и оснащение","t":"Тв+кронштейн","n":"Телевизор LG 55UM662H","s":"плюс кронштейн от пвв","u":"шт","q":{"e":0,"s":0},"a":[],"r":""},{"i":"HX-132","z":"Техника и оснащение","t":"Чехол для пульта ТВ","n":"чехол для пульта ТВ (50х190)","s":"","u":"шт","q":{"e":0,"s":1.0,"c":0},"a":[],"r":""},{"i":"HX-133","z":"Техника и оснащение","t":"Телефон","n":"Телефон гостинничный","s":"Как варианты: Ritmix RT-420 Ritmix RT-550 Ritmix RT-311 Gigaset DA100 Либо другие в ценовом диапазоне около 1000-1800р","u":"шт","q":{"e":1.0,"s":0,"c":1.0},"a":["Телефон гостинничный Yealink"],"r":"TDE19-S N0003"},{"i":"HX-134","z":"Техника и оснащение","t":"Чайная станция","n":"Чайник гостиничный электрический H1208S нержавеющая сталь 0,8л.800 Вт.","s":"Мощность: 1500W Нержавеющая сталь Автоматическое отключение при закипании Защита от включения без воды Скрытый нагревательный элемент Световой индикатор включения Вращение 360° VDE разъем Частота сети: 50Гц Напряжение: 220-240В","u":"шт","q":{"e":1.0,"s":1.0},"a":[],"r":"HCS HK-1005"},{"i":"HX-135","z":"Техника и оснащение","t":"Чайная станция","n":"Основной поднос электрический IB(тройной)с 36.3*23.3*3см.","s":"Материал пластик Цвет черный Габариты460х230х40 мм Страна производительКитай","u":"шт","q":{"e":1.0,"s":1.0},"a":[],"r":"HTT-1005B"},{"i":"HX-136","z":"Техника и оснащение","t":"Холодильник","n":"Холодильник NORDFROST NR 506 B / Tesler RC 55","s":"Размораживание:Капельная система Управление:Механическое Зона свежести:Нет Тип охлаждения:Компрессорный Без морозильной камеры Тип управления:Механическое Размеры (ШхВхГ) 50 х 52.5 х 48 см 60 литров","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":""},{"i":"HX-137","z":"Техника и оснащение","t":"Кондиционер","n":"наружный блок","s":"","u":"шт","q":{"s":1.0,"c":1.0},"a":["GWH09AAA-K3NNA1A/O наружный блок Bora/Lyra R410"],"r":""},{"i":"HX-138","z":"Техника и оснащение","t":"Кондиционер","n":"внутренний блок","s":"","u":"шт","q":{"s":1.0,"c":1.0},"a":["GWH02AAA-K3NNA2A/I внутренний блок Bora R410"],"r":""},{"i":"HX-139","z":"Техника и оснащение","t":"Кондиционер","n":"XK79 пульт проводной","s":"","u":"шт","q":{"s":1.0,"c":1.0},"a":[],"r":""},{"i":"HX-140","z":"Техника и оснащение","t":"Тв+кронштейн","n":"LG 55UM662H","s":"Производитель LG Тип телевизора Гостиничный Модель 55UM662H Артикул 55UM662H Особенности UHD, DVB-T2/C/S2, Pro:Centric (Smart, Cloud, Direct, V, Server), webRTC, Quick Menu, webOS23 Диагональ (в дюймах) 55 Разрешение 4K дисплеи Яркость, cd/","u":"шт","q":{"c":1.0},"a":["Телевизор LG 43LT340C (в спальную комнату)"],"r":""},{"i":"HX-141","z":"Техника и оснащение","t":"Чайная станция","n":"ЧАЙНИК ГОСТИНИЧНЫЙ HCS HK-1005","s":"Мощность: 1500W Нержавеющая сталь Автоматическое отключение при закипании Защита от включения без воды Скрытый нагревательный элемент Световой индикатор включения Вращение 360° VDE разъем Частота сети: 50Гц Напряжение: 220-240В","u":"шт","q":{"c":1.0},"a":[],"r":"HCS HK-1005"},{"i":"HX-142","z":"Техника и оснащение","t":"Чайная станция","n":"ПОДНОС HTT-1005B","s":"Материал пластик Цвет черный Габариты460х230х40 мм Страна производительКитай","u":"шт","q":{"c":1.0},"a":[],"r":"HTT-1005B"},{"i":"HX-143","z":"Техника и оснащение","t":"Сейф","n":"Сейф мебельный","s":"Размеры (ВхШхГ): 200x310x200 мм Размеры внутренние: 198x308x155 мм Вес: 5.5 кг Объем: 9 л Внешняя отделка: Порошковое покрытие Гарантия: 1 год","u":"шт","q":{"c":1.0},"a":[],"r":""},{"i":"HX-144","z":"Декор и интерьер","t":"Карниз","n":"Скрытый карниз трехрядная (Белый) ПК 12 Гардина","s":"Для изготовления ниш под карниз потолочного крепления с местом крепления штор. Длина профиля - 3,2м.","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":""},{"i":"HX-145","z":"Декор и интерьер","t":"Постер","n":"Постер тройной (триптих – три секции, печать на холсте + галерейная натяжка холста на подрамник)","s":"500 х850/500 х 850/500 х 850","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":""},{"i":"HX-146","z":"Декор и интерьер","t":"Текстиль","n":"Декоративная подушка 50х70","s":"Тип ткани: жаккард Состав: 100% полиэстер Ширина: 140 см Тест Мартиндейла: 45 000 ЦИКЛОВ Назначение: повседневное использование – Гипоаллергенность и экологичность – Высокая износостойкость – Дышащий материал – Ткань интенсивной эксплуатаци","u":"шт","q":{"c":4.0},"a":[],"r":""},{"i":"HX-147","z":"Декор и интерьер","t":"Вешалка бельевая сушилка","n":"вешалка бельевая сушилка","s":"","u":"шт","q":{"c":0},"a":[],"r":""},{"i":"HX-148","z":"Текстиль","t":"Простыни","n":"Простыни 180x245 или 260x245","s":"Простыня скроена таким образом, чтобы полоса располагалась по длине изделия. Срезы простыни обработаны с 4-х сторон швом вподгибку с закрытым срезом. Величина подгибки в готовом виде 1 см. Размеры изделий указаны до стирки Отбеленный жаккар","u":"шт","q":{"e":2.0,"s":2.0,"c":2.0},"a":["Характеристики тканей для детского постельного белья"],"r":""},{"i":"HX-149","z":"Текстиль","t":"Пододеяльник","n":"Пододеяльник 150x215 или 180x215 или 200х220","s":"Пододеяльники скроены таким образом, что полоса располагается по длине изделия, имеет разрез не менее 80 см в готовом виде, распложенный по ширине изделия. Внутренние срезы обработаны на пятиниточной стачивающе-обметочной машине, ширина шва","u":"шт","q":{"e":2.0,"s":2.0,"c":2.0},"a":[],"r":""},{"i":"HX-150","z":"Текстиль","t":"Наволочка","n":"Наволочка 52х73","s":"Наволочки скроены полосой по длине изделия, клапан высотой не менее 20 см распложен по ширине изделия. Внутренние срезы обработаны на пятиниточной стачивающе-обметочной машине, ширина шва 1-1,2 см. Срезы клапана и нижней детали наволочки за","u":"шт","q":{"e":4.0,"s":4.0,"c":4.0},"a":[],"r":""},{"i":"HX-151","z":"Текстиль","t":"Одеяло","n":"Одеяло 140*200 или 200*220 или 172*200 облегченное, стеганное, напол-ль: холфитекс, 200 г/м2 (чехол Тик полиэстер) или Одеяло теплое, стеганное, напол-ль: холфитекс, 400 г/м2 (чехол Тик полиэстер)","s":"Цвет – белый; Чехол: ткань - микрофибра 100% ПЭ; Наполнитель - холфитекс 300/400 г/м². Отбеленный жаккардовой сатин с вертикальной полосой 1*1 см, вид переплетения - сатиновое. Состав: 100% хлопок, мерсеризованная ткань, с антипиллинговой о","u":"шт","q":{"e":2.0,"s":2.0,"c":2.0},"a":[],"r":""},{"i":"HX-152","z":"Текстиль","t":"Одеяло детское","n":"Олеяло 110*130(детский)","s":"","u":"шт","q":{"e":0,"s":0,"c":0},"a":[],"r":""},{"i":"HX-153","z":"Текстиль","t":"Подушка","n":"Подушка капсульная,50х70 см, 500 г (мягкая), в съемном стеганном чехле на молнии (чехол Тик полиэстер) или Подушка капсульная,50х70 см, 700 г (упругая), в съемном стеганном чехле на молнии (чехол Тик полиэстер)","s":"Цвет – белый; Чехол: ткань - микрофибра 100% ПЭ; съемный стеганный, на молнии Наполнитель - холфитекс 500/700 г/м². капсульная","u":"шт","q":{"e":4.0,"s":4.0,"c":4.0},"a":[],"r":""},{"i":"HX-154","z":"Текстиль","t":"Подушка детская","n":"Подушка 50*50 40*60","s":"Цвет – белый; Чехол: ткань - тик (пуходержащий) 100% хлопок; съемный стеганный, на молнии Наполнитель – искусственный лебяжий пух 400 г/м².","u":"шт","q":{"e":0,"s":0,"c":0},"a":[],"r":""},{"i":"HX-155","z":"Текстиль","t":"Наматрасник","n":"наматрасник 80*200 90*200 120*200 160*200 180*200","s":"Цвет – белый; Верхняя ткань - махровая; Низ - ткань с водоотталкивающей полиуретановой мембраной; Борта - поликоттон на резинке по периметру. Наматрасник, мулетон-махра, непромокаемый, плотность 180 гр/м2, чехол резинка по периметру (борт и","u":"шт","q":{"e":2.0,"s":2.0,"c":2.0},"a":["Хар-ки Махра"],"r":""},{"i":"HX-156","z":"Текстиль","t":"Наматрасник детский","n":"наматрасник 60*120","s":"Цвет – белый; Верхняя ткань – махровая; Низ - ткань с водоотталкивающей полиуретановой мембраной; Углы на резинке. Наматрасник, мулетон-махра, непромокаемый, плотность 180 гр/м2, чехол резинка по периметру (борт из другой ткани)","u":"шт","q":{"e":0,"s":0,"c":0},"a":[],"r":""},{"i":"HX-157","z":"Текстиль","t":"Салфетка. Цвет белый 30x30","n":"Салфетка. Цвет белый","s":"Поверхностная плотность (г/м²) 300 Ширина: ± 2 см 30 Длина: ± 2 см 30","u":"шт","q":{"e":2.0,"s":2.0,"c":2.0},"a":[],"r":""},{"i":"HX-158","z":"Текстиль","t":"Полотенце Цвет белый 30x50","n":"полотенце Цвет белый 30х50","s":"Поверхностная плотность (г/м²) 450 Ширина: ± 2 см 30 Длина: ± 2 см 50","u":"шт","q":{"e":2.0,"s":2.0,"c":2.0},"a":["полотенце Цвет бордо 30х50"],"r":""},{"i":"HX-159","z":"Текстиль","t":"","n":"Полотенце для лица с логотипом. Цвет белый Полотенце махровое с логотипом в структуре махр 20/2, 450г/м2, 100%хлопок. Цвет белый","s":"Поверхностная плотность (г/м²) 450 Ширина: ± 2 см 50 Длина: ± 2 см 100","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":["Полотенце для лица с логотипом. Цвет бордо 50х100"],"r":""},{"i":"HX-160","z":"Текстиль","t":"","n":"Банное полотенце с логотипом. Цвет белый Полотенце махровое с логотипом в структуре махр 20/2, 450г/м2, 100%хлопок. Цвет белый","s":"Поверхностная плотность (г/м²) 450 Ширина: ± 2 см 70 Длина: ± 2 см 140","u":"шт","q":{"e":2.0,"s":2.0,"c":2.0},"a":["Банное полотенце с логотипом. Цвет бордо 70х140"],"r":""},{"i":"HX-161","z":"Текстиль","t":"","n":"Полотенце для процедур с логотипом Полотенце махровое с логотипом в структуре махр 20/2, 450г/м2, 100%хлопок. Цвет белый","s":"Поверхностная плотность (г/м²) 450 Ширина: ± 2 см 100 Длина: ± 2 см 150","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":["Полотенце для процедур с логотипом 100х150 цвет бордо"],"r":""},{"i":"HX-162","z":"Текстиль","t":"Полотенце с логотипом. 50х70","n":"Полотенце махровое с логотипом в структуре махр 20/2, 450г/м2, 100%хлопок. Цвет белый","s":"Поверхностная плотность (г/м²) 450 Ширина: ± 2 см 50 Длина: ± 2 см 70","u":"шт","q":{"e":2.0,"s":2.0,"c":2.0},"a":["Полотенце с логотипом. 50х70 цвет бордо"],"r":""},{"i":"HX-163","z":"Текстиль","t":"Коврик для ног «Степ» Цвет белый 50х70","n":"Коврик для ног «Степ» Цвет белый Коврик махровый (ножки), 20/2, 650г/м2, 100% хлопок. Цвет белый","s":"Поверхностная плотность (г/м²) 650 Ширина: ± 2 см 50 Длина: ± 2 см 70","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":["Коврик для ног «Степ» Цвет бордо 50х70"],"r":""},{"i":"HX-164","z":"Текстиль","t":"Халат махровый с логотипом. Цвет белый","n":"Халат махровый с логотипом. Цвет белый Халат махровый с вышивкой (логотип). Цвет белый.Модель \"Шалька\" с поясом и карманами по бокам.","s":"Поверхностная плотность (г/м²) 450 L-XXXL","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":""},{"i":"HX-165","z":"Текстиль","t":"","n":"Халат вафельный с логотипом Цвет белый. Модель кимоно Халат вафельный с вышивкой (логотип) . Цвет белый. Модель кимано. Плотность вафельного полотна – 240 г/м2","s":"Поверхностная плотность (г/м²) 240 L-XXXL","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":""},{"i":"HX-166","z":"Текстиль","t":"","n":"Портьера (300х300) или 225х280","s":"Портьера из труднопроницаемой, цветоустойчивой, шумопоглощающей шторной ткани Состав ткани – 100% трудновоспламеняемый полиэфир PES FR – Trevira CS. Ткань димаут 100PES FR плотность 250 г/м кв. Ширина ткани - 300 см.- Без блеска, матовая тк","u":"шт","q":{"e":2.0,"s":2.0},"a":[],"r":""},{"i":"HX-167","z":"Текстиль","t":"Вуаль, негорючая. Цвет белый","n":"Вуаль (300х300) или 225х280","s":"Вуаль (коэффициент сборки 1,94)– white / белая Состав ткани: плотность 52 г/м,кв, 100% трудновоспламеняемый полиэфир PES FR – Trevira CS Цвет белый, без желтизны. Трудновоспламеняемая ткань, должна иметь сертификат соответствия пожарной без","u":"шт","q":{"e":2.0,"s":2.0},"a":[],"r":""},{"i":"HX-168","z":"Текстиль","t":"Портьера","n":"Портьера (300х300)","s":"Портьера из труднопроницаемой, цветоустойчивой, шумопоглощающей шторной ткани Состав ткани – 100% трудновоспламеняемый полиэфир PES FR – Trevira CS. Ткань димаут 100PES FR плотность 2, 50 г/м кв. Ширина ткани - 300 см.- Без блеска, матовая ","u":"шт","q":{"c":2.0},"a":[],"r":""},{"i":"HX-169","z":"Текстиль","t":"Вуаль","n":"Вуаль (300х300)","s":"Вуаль (коэффициент сборки 1,94)– white / белая Состав ткани: плотность 52 г/м,кв, 100% трудновоспламеняемый полиэфир PES FR – Trevira CS Цвет белый, без желтизны. Трудновоспламеняемая ткань, должна иметь сертификат соответствия пожарной без","u":"шт","q":{"c":2.0},"a":[],"r":""},{"i":"HX-170","z":"Расходные материалы и amenities","t":"","n":"Зубной набор во флоупаке (зубная щетка 13,5, зубная паста в тубе3г) с логотипом","s":"","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":""},{"i":"HX-171","z":"Расходные материалы и amenities","t":"","n":"Бритвенный набор во флоупаке (станок 2-хлезвийный, крем для бритья в тубе 10гр) с логотипом","s":"","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":""},{"i":"HX-172","z":"Расходные материалы и amenities","t":"Шапочка для душа во флоупаке с логотипом","n":"Шапочка для душа во флоупаке с логотипом","s":"","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":""},{"i":"HX-173","z":"Расходные материалы и amenities","t":"","n":"Губка поролоновая для обуви во флоупаке с логотипом","s":"","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":""},{"i":"HX-174","z":"Расходные материалы и amenities","t":"","n":"Пакет ПЭ для белья на завязках (размер 60х40 см.) с логотипом / пакет майка эконом с лого","s":"","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":""},{"i":"HX-175","z":"Расходные материалы и amenities","t":"","n":"Открывалка кулачок пластиковая цветная с логотипом тампа-печать","s":"","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":""},{"i":"HX-176","z":"Расходные материалы и amenities","t":"","n":"Тапочки спанбонд эконом: верх спанбонд, подошва: спанбонд, картон. цвет белый","s":"","u":"шт","q":{"e":1.0,"s":1.0},"a":["Тапочки \"Искуственная махра\" с открытым мысом, ЭВА 2,5мм арт. 2005. Размер: 42-43 (29см), союзка:искуственная махра, поролон 2мм, спанбонд 3"],"r":""},{"i":"HX-177","z":"Расходные материалы и amenities","t":"","n":"мочалка нарукавник (110х60х25 мм.) для тела в упаковке ПЭ","s":"","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":""},{"i":"HX-178","z":"Расходные материалы и amenities","t":"","n":"Рожок для обуви пластиковый, 14 см. (белый)","s":"","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":""},{"i":"HX-179","z":"Расходные материалы и amenities","t":"Подстаканник бумажный (ажурный) d=10 см","n":"Подстаканник бумажный (ажурный) d=10 см","s":"","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":""},{"i":"HX-180","z":"Расходные материалы и amenities","t":"","n":"Щётка одежная (размер 14х4 см.) (дерево, щетина - искусственная)","s":"","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":""},{"i":"HX-181","z":"Расходные материалы и amenities","t":"","n":"Щётка для обуви (размер 14х4 см.) (дерево, щетина – натуральная)","s":"","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":""},{"i":"HX-182","z":"Расходные материалы и amenities","t":"","n":"Пакет санитарный белый (размер 12 х 25 см.)","s":"","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":""},{"i":"HX-183","z":"Расходные материалы и amenities","t":"","n":"Крем-мыло для рук и тела, в канистре 5 л.","s":"","u":"шт","q":{"e":0,"s":0,"c":0},"a":[],"r":""},{"i":"HX-184","z":"Расходные материалы и amenities","t":"Гель для душа + шампунь в канистре 5 л.","n":"Гель для душа + шампунь в канистре 5 л.","s":"","u":"шт","q":{"e":0,"s":0,"c":0},"a":[],"r":""},{"i":"HX-185","z":"Расходные материалы и amenities","t":"Расческа 14 см в ПЭ","n":"Расческа 14 см в ПЭ","s":"","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":""},{"i":"HX-186","z":"Расходные материалы и amenities","t":"Губка для тела Сезаль 10см*14см","n":"Губка для тела Сезаль 10см*14см","s":"","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":""},{"i":"HX-187","z":"Расходные материалы и amenities","t":"Салфетка для лица с лого","n":"Салфетка для лица с лого","s":"","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":""},{"i":"HX-188","z":"Расходные материалы и amenities","t":"Салфетка для обуви с лого","n":"Салфетка для обуви с лого","s":"","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":""},{"i":"HX-189","z":"Расходные материалы и amenities","t":"","n":"Косметический набор (ватные диски 2 шт., ватные палочки 4 шт., пилочка) в ПЭ","s":"","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":""},{"i":"HX-190","z":"Расходные материалы и amenities","t":"","n":"Набор швейный во флоупаке (нитки, иголка, пуговицы, булавка) с лого","s":"","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":""},{"i":"HX-191","z":"Расходные материалы и amenities","t":"Беруши","n":"Беруши","s":"","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":""},{"i":"HX-192","z":"Расходные материалы и amenities","t":"Мыло","n":"Мыло 1л жидкое пенное для душа и гель/шампунь белое","s":"","u":"шт","q":{"e":1.0,"s":1.0},"a":["Мыло 1л жидкое пенное для душа и гель/шампунь белое"],"r":""},{"i":"HX-193","z":"Расходные материалы и amenities","t":"Диспенсер","n":"диспенсер для жидкого мыла-пены и гель-шампуня","s":"","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":""},{"i":"HX-194","z":"Расходные материалы и amenities","t":"Бумага тулетная","n":"Бумага туалетная V 2сл 250л Comfort белый /пач.=1 шт.","s":"","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":["Туалетная бумага в малых рулонах с центральной вытяжкой 2сл"],"r":""},{"i":"HX-195","z":"Расходные материалы и amenities","t":"Диспенсер","n":"Диспенсер для туалетной бумаги в пачках","s":"","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":""},{"i":"HX-196","z":"Расходные материалы и amenities","t":"Освежитель воздуха - микроспрей 15мл","n":"Освежитель воздуха - микроспрей 15мл","s":"","u":"шт","q":{"e":1.0,"s":1.0,"c":1.0},"a":[],"r":""},{"i":"HX-197","z":"Расходные материалы и amenities","t":"","n":"Тапочки \"Искуственная махра\" с открытым мысом, ЭВА 2,5мм арт. 2005. Размер: 42-43 (29см), союзка:искуственная махра, поролон 2мм, спанбонд 30г; стелька: искуственная махра, поролон 2мм, картон; подошва: Эва 2,5мм, бейка из спанбонда","s":"","u":"шт","q":{"c":1.0},"a":["Тапочки \"Бизнес\", махра, верх открытый, подошва Эва 3 мм с логотипом вышивка"],"r":""},{"i":"HX-198","z":"Расходные материалы и amenities","t":"Мыло","n":"мыло","s":"Мыло 1л жидкое пенное для душа и гель/шампунь белое","u":"шт","q":{"c":1.0},"a":["Мыло 1л жидкое пенное для душа и гель/шампунь белое"],"r":""},{"i":"HX-199","z":"Расходные материалы и amenities","t":"Маска для глаз с лого","n":"Маска для глаз с лого","s":"","u":"шт","q":{"c":1.0},"a":[],"r":""},{"i":"HX-200","z":"Расходные материалы и amenities","t":"Пакет для косметики лого","n":"Пакет для косметики лого","s":"","u":"шт","q":{"c":1.0},"a":[],"r":""}];
+const LEVELS = [
+  {k:'e', name:'Эконом', plate:'Э-101', ds:'2-местный: душевой уголок, ТВ 32″, мебель ЛДСП «Дуб Честерфилд»'},
+  {k:'s', name:'Стандарт', plate:'С-201', ds:'2-местный: кондиционер, керамогранит Гран Пале 16 м², мебель «Дуб Гладстоун»'},
+  {k:'c', name:'Комфорт', plate:'К-301', ds:'Повышенной комфортности: биде, диван, сейф, мягкое изголовье, ТВ 55″'}
+];
+const ZONES = ['Санузел','Двери и система доступа','Мебель и спальное место','Отделка','Свет и электрика','Техника и оснащение','Декор и интерьер','Текстиль','Расходные материалы и amenities'];
+const M2 = /^(м2|м²)$/i;
+const state = {level:'s', rooms:10, zone:'', sel:{}};
+
+function fmt(n){ return (Math.round(n*10)/10).toLocaleString('ru-RU'); }
+function esc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function itemsFor(lv){ return DATA.filter(d => d.q[lv] !== undefined); }
+
+function resetSel(){
+  state.sel = {};
+  itemsFor(state.level).forEach(d => {
+    const base = d.q[state.level];
+    state.sel[d.i] = {on: base > 0, qty: base > 0 ? base : 1, alt: -1, opt: base === 0};
+  });
+}
+
+function renderLevels(){
+  const box = document.getElementById('levels');
+  box.innerHTML = LEVELS.map(l => {
+    const n = DATA.filter(d => d.q[l.k] > 0).length;
+    const o = DATA.filter(d => d.q[l.k] === 0).length;
+    return `<label class="level"><input type="radio" name="lv" value="${l.k}" ${l.k===state.level?'checked':''}>
+      <span class="plate" style="margin-bottom:10px">${l.plate}</span>
+      <div class="nm">${l.name}</div><div class="ds">${l.ds}</div>
+      <div class="ct">${n} в базе · ${o} опций</div></label>`;
+  }).join('');
+  box.querySelectorAll('input').forEach(inp => inp.addEventListener('change', e => {
+    state.level = e.target.value; resetSel(); renderAll();
+  }));
+}
+
+function renderZonesNav(){
+  const list = itemsFor(state.level);
+  const nav = document.getElementById('zones-nav');
+  const btn = (z, label) => {
+    const c = z ? list.filter(d => d.z === z).length : list.length;
+    return `<button type="button" class="chip" data-z="${esc(z)}" aria-pressed="${state.zone===z}">${esc(label)}<span class="c">${c}</span></button>`;
+  };
+  nav.innerHTML = btn('', 'Все') + ZONES.filter(z => list.some(d => d.z === z)).map(z => btn(z, z)).join('');
+  nav.querySelectorAll('.chip').forEach(b => b.addEventListener('click', () => { state.zone = b.dataset.z; renderZonesNav(); renderItems(); markPlan(); }));
+}
+
+function renderItems(){
+  const list = itemsFor(state.level).filter(d => !state.zone || d.z === state.zone);
+  const box = document.getElementById('items');
+  let html = '';
+  ZONES.forEach(z => {
+    const zs = list.filter(d => d.z === z);
+    if (!zs.length) return;
+    const on = zs.filter(d => state.sel[d.i].on).length;
+    html += `<div class="zone-group"><h4><span>${esc(z)}</span><span class="mono muted" style="font-size:12px">${on} из ${zs.length}</span></h4>`;
+    zs.forEach(d => {
+      const s = state.sel[d.i];
+      const alts = d.a.length ? `<select aria-label="Вариант для ${esc(d.i)}" data-alt="${d.i}"><option value="-1">Основной вариант</option>${d.a.map((a,k)=>`<option value="${k}" ${s.alt===k?'selected':''}>${esc(a)}</option>`).join('')}</select>` : '';
+      html += `<div class="item ${s.on?'':'off'}">
+        <input type="checkbox" id="c-${d.i}" data-on="${d.i}" ${s.on?'checked':''}>
+        <div><label for="c-${d.i}"><div class="t">${esc(d.t || d.z)}${s.opt?'<span class="tag opt">опция</span>':''}${d.a.length?`<span class="tag alt">${d.a.length} альт.</span>`:''}</div>
+          <div class="n">${esc(s.alt>=0 ? d.a[s.alt] : d.n)}</div>${d.s && s.alt<0 ? `<div class="sp">${esc(d.s.slice(0,160))}${d.s.length>160?'…':''}</div>`:''}</label>${alts}</div>
+        <div class="qty"><input type="number" min="0" step="any" value="${s.qty}" aria-label="Количество на номер" data-qty="${d.i}" ${s.on?'':'disabled'}><small>${esc(d.u)} / номер</small></div>
+      </div>`;
+    });
+    html += '</div>';
+  });
+  box.innerHTML = html || '<p class="muted">В этой зоне нет позиций для выбранного уровня.</p>';
+  box.querySelectorAll('[data-on]').forEach(el => el.addEventListener('change', e => { state.sel[e.target.dataset.on].on = e.target.checked; renderItems(); renderSummary(); }));
+  box.querySelectorAll('[data-qty]').forEach(el => el.addEventListener('input', e => { const v = parseFloat(e.target.value); state.sel[e.target.dataset.qty].qty = isNaN(v)?0:v; renderSummary(); }));
+  box.querySelectorAll('[data-alt]').forEach(el => el.addEventListener('change', e => { state.sel[e.target.dataset.alt].alt = parseInt(e.target.value,10); renderItems(); renderSummary(); }));
+}
+
+function chosen(){
+  return itemsFor(state.level).filter(d => state.sel[d.i].on && state.sel[d.i].qty > 0);
+}
+
+function renderSummary(){
+  const ch = chosen(); const R = state.rooms;
+  let units = 0, m2 = 0, opts = 0, alts = 0;
+  ch.forEach(d => { const s = state.sel[d.i];
+    if (M2.test(d.u)) m2 += s.qty * R; else if (/^шт/i.test(d.u)) units += s.qty * R;
+    if (s.opt) opts++; if (s.alt >= 0) alts++; });
+  const lv = LEVELS.find(l => l.k === state.level);
+  document.getElementById('t-pos').textContent = ch.length;
+  document.getElementById('t-rooms').textContent = R;
+  document.getElementById('t-units').textContent = fmt(units);
+  document.getElementById('t-m2').textContent = fmt(m2);
+  document.getElementById('t-opts').textContent = opts;
+  document.getElementById('t-alts').textContent = alts;
+  document.getElementById('t-plate').textContent = lv.plate;
+  document.getElementById('plan-level').textContent = 'уровень: ' + lv.name;
+  document.querySelectorAll('.zc').forEach(t => { const z = t.dataset.c; const n = ch.filter(d => d.z === z).length; t.textContent = n ? n + ' поз.' : '—'; });
+}
+
+function specText(){
+  const lv = LEVELS.find(l => l.k === state.level); const R = state.rooms;
+  const lines = [`Ведомость оснащения: ${lv.name}, ${R} ном. (${document.getElementById('ptype').value}${document.getElementById('city').value ? ', ' + document.getElementById('city').value : ''})`, ''];
+  ZONES.forEach(z => { const zs = chosen().filter(d => d.z === z); if (!zs.length) return;
+    lines.push('— ' + z);
+    zs.forEach(d => { const s = state.sel[d.i]; const nm = s.alt >= 0 ? d.a[s.alt] : d.n;
+      lines.push(`${d.i}  ${nm.slice(0,90)}  — ${fmt(s.qty)} ${d.u}/ном., всего ${fmt(s.qty*R)} ${d.u}`); });
+    lines.push(''); });
+  return lines.join('\n');
+}
+
+function markPlan(){ document.querySelectorAll('.plan .zone').forEach(g => g.classList.toggle('on', g.dataset.zone === state.zone)); }
+
+/* catalog */
+let catLimit = 40;
+function renderCatalog(){
+  const q = document.getElementById('q').value.trim().toLowerCase();
+  const z = document.getElementById('cz').value;
+  const rows = DATA.filter(d => (!z || d.z === z) && (!q || (d.n + ' ' + d.t + ' ' + d.r + ' ' + d.a.join(' ')).toLowerCase().includes(q)));
+  const cell = v => v === undefined ? '<td class="q muted">—</td>' : (v === 0 ? '<td class="q">опц.</td>' : `<td class="q">${fmt(v)}</td>`);
+  document.getElementById('cat-body').innerHTML = rows.slice(0, catLimit).map(d => `<tr><td class="id">${d.i}</td><td><div>${esc(d.n)}</div>${d.a.length?`<div class="muted" style="font-size:12px">или: ${esc(d.a[0].slice(0,80))}${d.a.length>1?' и ещё '+(d.a.length-1):''}</div>`:''}</td><td>${esc(d.z)}</td>${cell(d.q.e)}${cell(d.q.s)}${cell(d.q.c)}<td>${esc(d.u)}</td></tr>`).join('') || '<tr><td colspan="7" class="muted">Ничего не нашлось. Попробуйте бренд или тип позиции.</td></tr>';
+  document.getElementById('cat-count').textContent = `Показано ${Math.min(catLimit, rows.length)} из ${rows.length}`;
+  document.getElementById('cat-more').hidden = rows.length <= catLimit;
+}
+
+function renderSupply(){
+  const sup = DATA.filter(d => d.z === 'Текстиль' || d.z === 'Расходные материалы и amenities');
+  const logo = sup.filter(d => /лого/i.test(d.n));
+  document.getElementById('sup-count').textContent = sup.length;
+  document.getElementById('sup-logo').textContent = logo.length;
+  document.getElementById('logo-list').innerHTML = logo.slice(0,6).map(d => `<li>${esc(d.n.replace(/\s+Цвет.*$/,'').slice(0,70))}</li>`).join('');
+}
+
+function renderAll(){ renderLevels(); renderZonesNav(); renderItems(); renderSummary(); markPlan(); }
+
+/* wiring */
+document.getElementById('f-items').textContent = DATA.length;
+document.getElementById('rooms').addEventListener('input', e => { const v = parseInt(e.target.value,10); state.rooms = isNaN(v)||v<1 ? 1 : Math.min(v,500); renderSummary(); });
+document.querySelectorAll('.plan .zone').forEach(g => {
+  const go = () => { state.zone = g.dataset.zone; renderZonesNav(); renderItems(); markPlan(); document.getElementById('config').scrollIntoView(); };
+  g.addEventListener('click', go);
+  g.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
+});
+const cz = document.getElementById('cz');
+cz.innerHTML += ZONES.map(z => `<option>${esc(z)}</option>`).join('');
+document.getElementById('q').addEventListener('input', () => { catLimit = 40; renderCatalog(); });
+cz.addEventListener('change', () => { catLimit = 40; renderCatalog(); });
+document.getElementById('cat-more').addEventListener('click', () => { catLimit += 60; renderCatalog(); });
+document.getElementById('sup-go').addEventListener('click', () => { state.zone = 'Расходные материалы и amenities'; renderZonesNav(); renderItems(); markPlan(); });
+
+document.getElementById('copy-spec').addEventListener('click', async () => {
+  const msg = document.getElementById('copy-msg');
+  try { await navigator.clipboard.writeText(specText()); msg.textContent = 'Ведомость скопирована.'; }
+  catch(e){ msg.textContent = 'Браузер не дал скопировать. Откройте «Получить КП» — там ведомость можно выделить вручную.'; }
+});
+const dlg = document.getElementById('req');
+document.getElementById('open-req').addEventListener('click', () => {
+  document.getElementById('r-spec').textContent = specText();
+  document.getElementById('r-ok').hidden = true;
+  if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open','');
+});
+document.getElementById('r-close').addEventListener('click', () => dlg.close ? dlg.close() : dlg.removeAttribute('open'));
+document.getElementById('req-form').addEventListener('submit', e => { e.preventDefault(); if (!e.target.reportValidity()) return; document.getElementById('r-ok').hidden = false; });
+
+resetSel(); renderAll(); renderCatalog(); renderSupply();
+</script>
+</body>
+</html>
